@@ -1,7 +1,14 @@
 (ns clj-astminer.core
+  (:require [clojure.tools.cli :refer [parse-opts]])
   (:gen-class))
 
+(def cli-options
+  [["-r" "--repo FILE" "File to parse and analyze"
+    :default "resources/test.clj"]
+   ["-h" "--help"]])
+
 (defn -main
-  "I don't do a whole lot ... yet."
+  "Main entry point for clj-astminer."
   [& args]
-  (println "Hello, World!"))
+  (let [args (parse-opts args cli-options)]
+    nil))
