@@ -1,5 +1,6 @@
 (ns clj-astminer.astminer
-  (:require [clojure.tools.analyzer.ast :as ast]
+  (:require [clojure.core.match :refer [match]] 
+            [clojure.tools.analyzer.ast :as ast]
             [clojure.tools.analyzer.jvm :as ana]
             [clojure.tools.reader :as r]
             [clojure.tools.reader.reader-types :as t])
@@ -26,6 +27,9 @@
 
 (defn parse-file [file]
   (map ana/analyze (read-string-as-clj-exprs (slurp file))))
+
+(defn parse-string [string]
+  (map ana/analyze (read-string-as-clj-exprs string)))
 
 ;; (set! *print-length* 10)
 ;; (set! *print-level* 10)
