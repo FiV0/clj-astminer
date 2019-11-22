@@ -121,11 +121,12 @@
        (map transform-ast)))
 
 (defn parse-string [string]
-  (map ana/analyze (read-string-as-clj-exprs string)))
-
+  (->> (read-string-as-clj-exprs string)
+       (map ana/analyze)
+       (map transform-ast)))
 
 ;; (parse-file "resources/test.clj")
-;; (count *1) 
+
 ;; (set! *print-length* 10)
 ;; (set! *print-level* 10)
 
