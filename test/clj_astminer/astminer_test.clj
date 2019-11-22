@@ -9,3 +9,8 @@
      (is (= 2 (count (read-string-as-clj-exprs (slurp "resources/test.clj"))))))
    (testing "with reader macros"
      (is (= 2 (count (read-string-as-clj-exprs "#=(+ 1 2)\n (defn id [x] x)")))))))
+
+(deftest parse-file-test
+  (binding [r/*read-eval* false]
+    (testing "with resources/test.clj"
+      (is (= 2 (count (parse-file "resources/test.clj")))))))

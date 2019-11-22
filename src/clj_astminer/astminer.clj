@@ -1,5 +1,6 @@
 (ns clj-astminer.astminer
-  (:require [clojure.core.match :refer [match]] 
+  (:require [clojure.tools.trace :refer [trace]]
+            ;; [clojure.core.match :refer [match]] 
             [clojure.tools.analyzer.ast :as ast]
             [clojure.tools.analyzer.jvm :as ana]
             [clojure.tools.reader :as r]
@@ -21,15 +22,6 @@
                         (catch clojure.lang.ExceptionInfo e read-macro-err))]
            (if (= exp end) res
                (recur input (if (= exp read-macro-err) res (conj res exp))))))))))
-
-(defn filter-for-defs [asts]
-  (filter #(= (:op %) :def) asts))
-
-(defn parse-file [file]
-  (map ana/analyze (read-string-as-clj-exprs (slurp file))))
-
-(defn parse-string [string]
-  (map ana/analyze (read-string-as-clj-exprs string)))
 
 (defn conj-not-nil [coll val]
   (if (= val nil)
@@ -54,20 +46,19 @@
     :case {:op :case :children
            (map transform-ast (as-> (interleave (:tests ast) (:thens ast)) v
                                 (cons (:test ast) v)
-                                (concat v (:default ast))))}
+                                (concat v [(:default ast)])))}
     ;;NOTE ignoring metadata here
     :const {:op :const :val (:form ast)}
     :def {:op :def :val (:name ast) :doc (:doc ast)
-          :children (->> (filter #(contains? % :meta) (:children ast))
+          :children (->> (filter #(= % :meta) (:children ast))
                          (map #(% ast))
                          (map transform-ast))}
     :deftype {:op :deftype :val (:name ast)
               :children (map transform-ast (map #(% ast) (:children ast)))}
     :do {:op :do :children (->> (conj (:statements ast) (:ret ast))
-                                (map #(% ast))
                                 (map transform-ast))}
     :fn {:op :fn :children (->> (:local ast)
-                                (conj-not-nil (vec-to-list (:methods ast) ))
+                                (conj-not-nil (vec-to-list (:methods ast)))
                                 (map transform-ast))}
     :fn-method {:op :fn-method :children (->> (conj (:params ast) (:body ast))
                                               (map transform-ast))}
@@ -121,8 +112,20 @@
     {:op (:op ast) :children (map transform-ast (map #(% ast) (:children ast)))}
     (throw (Exception. "Undefined AST node !!!"))))
 
-;; (parse-file "resources/test.clj")
+(defn filter-for-defs [asts]
+  (filter #(= (:op %) :def) asts))
 
+(defn parse-file [file]
+  (->> (read-string-as-clj-exprs (slurp file))
+       (map ana/analyze)
+       (map transform-ast)))
+
+(defn parse-string [string]
+  (map ana/analyze (read-string-as-clj-exprs string)))
+
+
+;; (parse-file "resources/test.clj")
+;; (count *1) 
 ;; (set! *print-length* 10)
 ;; (set! *print-level* 10)
 
