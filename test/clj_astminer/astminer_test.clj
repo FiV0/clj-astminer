@@ -14,3 +14,21 @@
   (binding [r/*read-eval* false]
     (testing "with resources/test.clj"
       (is (= 2 (count (parse-file "resources/test.clj")))))))
+
+(deftest extend-path-extensions-test
+  (testing "extend-path-extensions"
+    (is (= '({:path (:foo :bar)} {:path (:foo :buzz)})
+           (extend-path-extensions :foo '({:path (:bar)} {:path (:buzz)}))))))
+
+(deftest combine-path-extensions-test
+  (testing "combine-path-extensions"
+    (is (= '({:path1 (:bar) :val1 1 :op :foo :path2 (:buzz) :val2 2})
+           (combine-path-extensions :foo '(({:path (:bar) :val 1})
+                                           ({:path (:buzz) :val 2})))))))
+
+(deftest combine-path-extensions-direct-test
+  (testing "combine-path-extensions"
+    (is (= '({:path1 nil :val1 "foo" :op :foo :path2 (:bar) :val2 1}
+             {:path1 nil :val1 "foo" :op :foo :path2 (:buzz) :val2 2})
+           (combine-path-extensions-direct :foo "foo" '(({:path (:bar) :val 1})
+                                                        ({:path (:buzz) :val 2})))))))
