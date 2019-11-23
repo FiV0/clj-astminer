@@ -1,5 +1,7 @@
 (ns clj-astminer.core
-  (:require [clojure.tools.cli :refer [parse-opts]])
+  (:require [clj-astminer.astminer :refer [parse-file]]
+            [clojure.tools.cli :refer [parse-opts]]
+            [clojure.java.io :as io])
   (:gen-class))
 
 (def cli-options
@@ -16,5 +18,8 @@
 (defn -main
   "Main entry point for clj-astminer. Currently "
   [& args]
-  (let* [args (parse-opts args cli-options)]
-    nil))
+  (let* [args (parse-opts args cli-options)
+         file (->> args :options :file)]
+    (if (.exists (io/file file))
+      (doall (map println (parse-file file)))
+      (println "File " file " does not exist!"))))
