@@ -116,6 +116,7 @@
                                   (map transform-ast))}
     :var {:op :var :val (:form ast)}
     :vector {:op :vector :children (map transform-ast (:items ast))}
+    ;; NOTE maybe remove this meta field
     :with-meta {:op :with-meta :children (list (transform-ast (:expr ast)))} 
     (:let :letfn :loop) {:op (:op ast)
                    :children (->> (conj (:bindings ast) (:body ast))
@@ -151,7 +152,7 @@
                             :op op
                             :path2 (:path path-ext) :val2 (:val path-ext)}))))
 
-(defn create-ast-paths
+(defn create-ast-paths-helper
   "Creates all ast-paths for a given ast transformed by transform-ast.
 
   The function returns a vector pair where the first value is a list
@@ -187,6 +188,19 @@
     ;; TODO check if node exists that only contains 
     :else  [(list {:path (list (:op ast)) :val (:val ast)}) '()]))
 
+(defn create-ast-path
+  "Creates an AST-PATH of the form [terminal-value1 path terminal-value2].
+
+  The path is the form (:op1 \"<\" :op2 ... \">\" :op_n) where \"<\"
+  designates an up operation and \"<\" a down operation. The input is a path
+  as returned by the create-ast-paths-helper."
+  [path]
+  [(:val1 path)
+   (concat (interleave (:path1 path) (repeat "<"))
+           (list (:op path))
+           (interleave (repeat ">") (:path2 path)))
+   (:val2 path)])
+
 (defn filter-for-defs [asts]
   (filter #(= (:op %) :def) asts))
 
@@ -197,8 +211,12 @@
 
 (defn file-to-ast-paths [file]
   (->> (file-to-asts file)
-       (map create-ast-paths)
-       (map second)))
+       (map create-ast-paths-helper)
+       (map second)
+       (map #(map create-ast-path %))))
+
+(second (file-to-ast-paths "resources/test.clj") ) 
+(map create-ast-path *1)
 
 (defn string-to-asts [string]
   (->> (read-string-as-clj-exprs string)
