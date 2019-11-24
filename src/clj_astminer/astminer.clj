@@ -53,18 +53,19 @@
   (assert (contains? ast :op))
   (case (:op ast)
     ;; TODO check if uniquified are bad or good for ML
+    ;; TODO maybe remove meta-data stuff
     :binding {:op :binding :val (:form ast) 
               :children (map transform-ast (map #(% ast) (:children ast)))}
     :case {:op :case :children
            (map transform-ast (as-> (interleave (:tests ast) (:thens ast)) v
                                 (cons (:test ast) v)
                                 (concat v [(:default ast)])))}
-    ;;NOTE ignoring metadata here
+    ;; NOTE ignoring metadata here
     :const {:op :const :val (:form ast)}
     :def {:op :def :val (:name ast) :doc (:doc ast)
-          :children (->> (filter #(= % :meta) (:children ast))
-                         (map #(% ast))
-                         (map transform-ast))}
+          :children (if (nil? (:init ast))
+                      nil
+                      (list (transform-ast (:init ast))))}
     :deftype {:op :deftype :val (:name ast)
               :children (map transform-ast (map #(% ast) (:children ast)))}
     :do {:op :do :children (->> (conj (:statements ast) (:ret ast))
@@ -115,7 +116,7 @@
                                   (map transform-ast))}
     :var {:op :var :val (:form ast)}
     :vector {:op :vector :children (map transform-ast (:items ast))}
-    :with-meta {:op :with-meta :children (list (transform-ast (:meta ast)))} 
+    :with-meta {:op :with-meta :children (list (transform-ast (:expr ast)))} 
     (:let :letfn :loop) {:op (:op ast)
                    :children (->> (conj (:bindings ast) (:body ast))
                                   (map transform-ast))}
@@ -195,7 +196,9 @@
        (map transform-ast)))
 
 (defn file-to-ast-paths [file]
-  (map create-ast-paths (file-to-asts file)))
+  (->> (file-to-asts file)
+       (map create-ast-paths)
+       (map second)))
 
 (defn string-to-asts [string]
   (->> (read-string-as-clj-exprs string)
