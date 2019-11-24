@@ -5,7 +5,8 @@
             [clojure.tools.analyzer.ast :as ast]
             [clojure.tools.analyzer.jvm :as ana]
             [clojure.tools.reader :as r]
-            [clojure.tools.reader.reader-types :as t])
+            [clojure.tools.reader.reader-types :as t]
+            [clojure.string :as st])
   (:gen-class))
 
 ;; This file tries to use the same naming conventions as in
@@ -204,6 +205,9 @@
 (defn filter-for-defs [asts]
   (filter #(= (:op %) :def) asts))
 
+(defn filter-for-with-vals [asts]
+  (filter #(contains? % :val) asts))
+
 (defn file-to-asts [file]
   (->> (read-string-as-clj-exprs (slurp file))
        (map ana/analyze)
@@ -215,8 +219,29 @@
        (map second)
        (map #(map create-ast-path %))))
 
-(second (file-to-ast-paths "resources/test.clj") ) 
-(map create-ast-path *1)
+(defn code2vec-name-encoding [name]
+  ((comp
+    #(if (= (first %) \|) (subs % 1) %)
+    #(if (= (last %) \|) (subs % 0 (- (count %) 1)) %)
+    #(st/replace % #"-" "|" ))
+   name))
+
+(defn hash-path [ast-path]
+  [(first ast-path)
+   (->> (second ast-path)
+        (map str)
+        (apply str))
+   (nth ast-path 2)])
+
+(defn file-to-code2vec [file]
+  (let [asts (filter-for-with-vals (file-to-asts file))
+        vals (map #(->> % :val str code2vec-name-encoding) asts)
+        ast-paths (->> asts
+                       (map create-ast-paths-helper)
+                       (map second)
+                       (map #(map (comp hash-path create-ast-path) %))
+                       )]
+    (map cons vals ast-paths)))
 
 (defn string-to-asts [string]
   (->> (read-string-as-clj-exprs string)
