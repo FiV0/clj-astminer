@@ -1,5 +1,6 @@
 (ns clj-astminer.core
-  (:require [clj-astminer.astminer :refer [parse-file]]
+  (:require [clj-astminer.astminer :refer [file-to-asts
+                                           file-to-ast-paths]]
             [clojure.tools.cli :refer [parse-opts]]
             [clojure.java.io :as io])
   (:gen-class))
@@ -45,9 +46,15 @@
 (defn -main
   "Main entry point for clj-astminer. Currently "
   [& args]
-  (let* [args (parse-opts args cli-options)
-         file (->> args :options :file)
-         output-file (->> args :options :output)]
+  (let [args (parse-opts args cli-options)
+         options (:options args) 
+         file (:file options)
+         output-file (:output options)
+         type (:type options)]
     (if (.exists (io/file file))
-      (write-or-print (io/file output-file) (parse-file file))
+      (case type
+        "AST" (write-or-print (io/file output-file) (file-to-asts file))
+        "AST-PATH" (write-or-print (io/file output-file) (file-to-ast-paths file))
+        "AST-PATH-HASHED" (println "Option currently not implemented!")
+        (throw (Exception. "Should not happen!!!")))
       (println "File " file " does not exist!"))))

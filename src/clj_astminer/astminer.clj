@@ -189,12 +189,15 @@
 (defn filter-for-defs [asts]
   (filter #(= (:op %) :def) asts))
 
-(defn parse-file [file]
+(defn file-to-asts [file]
   (->> (read-string-as-clj-exprs (slurp file))
        (map ana/analyze)
        (map transform-ast)))
 
-(defn parse-string [string]
+(defn file-to-ast-paths [file]
+  (map create-ast-paths (file-to-asts file)))
+
+(defn string-to-asts [string]
   (->> (read-string-as-clj-exprs string)
        (map ana/analyze)
        (map transform-ast)))

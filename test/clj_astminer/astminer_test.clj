@@ -10,10 +10,10 @@
    (testing "with reader macros"
      (is (= 2 (count (read-string-as-clj-exprs "#=(+ 1 2)\n (defn id [x] x)")))))))
 
-(deftest parse-file-test
+(deftest file-to-asts-test  
   (binding [r/*read-eval* false]
     (testing "with resources/test.clj"
-      (is (= 2 (count (parse-file "resources/test.clj")))))))
+      (is (= 2 (count (file-to-asts "resources/test.clj")))))))
 
 (deftest extend-path-extensions-test
   (testing "extend-path-extensions"
@@ -32,3 +32,8 @@
              {:path1 nil :val1 "foo" :op :foo :path2 (:buzz) :val2 2})
            (combine-path-extensions-direct :foo "foo" '(({:path (:bar) :val 1})
                                                         ({:path (:buzz) :val 2})))))))
+
+(deftest file-to-ast-paths-test  
+  (binding [r/*read-eval* false]
+    (testing "with resources/test.clj"
+      (is (= 2 (count (file-to-ast-paths "resources/test.clj")))))))
