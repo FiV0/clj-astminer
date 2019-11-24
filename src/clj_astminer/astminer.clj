@@ -170,7 +170,7 @@
   (assert (contains? ast :op))
   (cond
     (and (contains? ast :val) (contains? ast :children))
-    (let [children-results (map create-ast-paths (:children ast))
+    (let [children-results (map create-ast-paths-helper (:children ast))
           children-path-extensions (map first children-results)
           children-results (mapcat second children-results)
           {:keys [op val]} ast]
@@ -180,7 +180,7 @@
                (combine-path-extensions op children-path-extensions)
                children-results)])
     (contains? ast :children)
-    (let* [children-results (map create-ast-paths (:children ast))
+    (let* [children-results (map create-ast-paths-helper (:children ast))
            children-path-extensions (map first children-results)
            children-results (mapcat second children-results)]
       [(extend-path-extensions (:op ast) (apply concat children-path-extensions ))

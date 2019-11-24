@@ -1,18 +1,24 @@
 (ns clj-astminer.core
-  (:require [clj-astminer.astminer :refer [file-to-asts
-                                           file-to-ast-paths]]
+  (:require [clj-astminer.astminer :refer
+             [file-to-asts file-to-ast-paths file-to-code2vec]]
             [clojure.tools.cli :refer [parse-opts]]
             [clojure.java.io :as io])
   (:gen-class))
 
+(defn in? 
+  "True if coll contains elm."
+  [coll elm]  
+  (some #(= elm %) coll))
+
 (def cli-options
-  [["-f" "--file FILE" "File to parse and analyze"
+  [["-f" "--file FILE" "File to parse and analyze."
     :default "resources/test.clj"]
-   ["-t" "--type TYPE" "Type of output"
+   ["-t" "--type TYPE" "Type of output."
     :default "AST"
-    :validate [#(contains? ["AST" "AST-PATH" "AST-PATH-HASHED"])
-               "TYPE must be one of AST AST-PATH or AST-PATH-HASHED"]]
-   ["-o" "--output OUTPUT-FILE" "File to output the results to. Can be read back "
+    :validate [#(in? ["AST" "AST-PATH" "AST-PATH-HASHED"] %)
+               "TYPE must be one of AST AST-PATH or AST-PATH-HASHED"]
+    ]
+   ["-o" "--output OUTPUT-FILE" "File to output the results to."
     :default nil]
    ["-h" "--help"]])
 
@@ -47,14 +53,15 @@
   "Main entry point for clj-astminer. Currently "
   [& args]
   (let [args (parse-opts args cli-options)
-         options (:options args) 
-         file (:file options)
-         output-file (:output options)
-         type (:type options)]
+        options (:options args) 
+        file (:file options)
+        output-file (:output options)
+        type (:type options)]
+    ;; TODO add error checking
     (if (.exists (io/file file))
       (case type
         "AST" (write-or-print (io/file output-file) (file-to-asts file))
         "AST-PATH" (write-or-print (io/file output-file) (file-to-ast-paths file))
-        "AST-PATH-HASHED" (println "Option currently not implemented!")
+        "AST-PATH-HASHED" (write-or-print (io/file output-file) (file-to-code2vec file)) 
         (throw (Exception. "Should not happen!!!")))
       (println "File " file " does not exist!"))))
