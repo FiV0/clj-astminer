@@ -209,46 +209,50 @@
   (filter #(contains? % :val) asts))
 
 (defn file-to-asts [file]
+  "Returns a list of asts, one ast per expression in the file."
   (->> (read-string-as-clj-exprs (slurp file))
        (map ana/analyze)
        (map transform-ast)))
-
-(defn file-to-ast-paths [file]
-  (->> (file-to-asts file)
-       (map create-ast-paths-helper)
-       (map second)
-       (map #(map create-ast-path %))))
-
-(defn code2vec-name-encoding [name]
-  ((comp
-    #(if (= (first %) \|) (subs % 1) %)
-    #(if (= (last %) \|) (subs % 0 (- (count %) 1)) %)
-    #(st/replace % #"-" "|" ))
-   name))
-
-(defn hash-path [ast-path]
-  [(first ast-path)
-   (->> (second ast-path)
-        (map str)
-        (apply str))
-   (nth ast-path 2)])
-
-(defn file-to-code2vec [file]
-  (let [asts (filter-for-with-vals (file-to-asts file))
-        vals (map #(->> % :val str code2vec-name-encoding) asts)
-        ast-paths (->> asts
-                       (map create-ast-paths-helper)
-                       (map second)
-                       (map #(map (comp hash-path create-ast-path) %))
-                       )]
-    (map cons vals ast-paths)))
 
 (defn string-to-asts [string]
   (->> (read-string-as-clj-exprs string)
        (map ana/analyze)
        (map transform-ast)))
 
-;; (parse-file "resources/test.clj")
+(defn file-to-ast-paths 
+  "Creates all list of ast-path lists, one ast-path list per expression."
+  [file]
+  (->> (file-to-asts file)
+       (map create-ast-paths-helper)
+       (map second)
+       (map #(map create-ast-path %))))
+
+(defn code2vec-name-encoding 
+  "Function name encoding as used by code2vec format."
+  [name]
+  ((comp
+    #(if (= (first %) \|) (subs % 1) %)
+    #(if (= (last %) \|) (subs % 0 (- (count %) 1)) %)
+    #(st/replace % #"-" "|" ))
+   name))
+
+(defn hash-path 
+  "Hashes an ast-path, outputs triple as used by code2vec."
+  [ast-path]
+  [(first ast-path)
+   (->> (second ast-path) (map name) (apply str) hash)
+   (nth ast-path 2)])
+
+(defn file-to-code2vec 
+  "Transforms a file to the code2vec format."
+  [file]
+  (let [asts (filter-for-with-vals (file-to-asts file))
+        vals (map #(->> % :val str code2vec-name-encoding) asts)
+        ast-paths (->> asts
+                       (map create-ast-paths-helper)
+                       (map second)
+                       (map #(map (comp hash-path create-ast-path) %)))]
+    (map cons vals ast-paths)))
 
 ;; (set! *print-length* 10)
 ;; (set! *print-level* 10)

@@ -37,3 +37,11 @@
   (binding [r/*read-eval* false]
     (testing "with resources/test.clj"
       (is (= 2 (count (file-to-ast-paths "resources/test.clj")))))))
+
+(deftest file-to-code2vec-test
+  (binding [r/*read-eval* false]
+    (testing "with resources/test.clj"
+      (is (= 1 (count (file-to-code2vec "resources/test.clj")))))))
+
+;; (ns-unmap 'clj-astminer.astminer-test '-main)
+;; (run-tests)
