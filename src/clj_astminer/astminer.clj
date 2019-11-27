@@ -47,85 +47,163 @@
   (assert (instance? clojure.lang.APersistentVector vec))
   (reverse (into '() vec)))
 
-(defn transform-ast
+(defmulti transform-ast
   "Transform an AST given by tools.reader.jvm/analyze into a more managable structure.
   FIXME Description"
-  [ast]
-  (assert (contains? ast :op))
-  (case (:op ast)
-    ;; TODO check if uniquified are bad or good for ML
-    ;; TODO maybe remove meta-data stuff
-    :binding {:op :binding :val (:form ast) 
-              :children (map transform-ast (map #(% ast) (:children ast)))}
-    :case {:op :case :children
-           (map transform-ast (as-> (interleave (:tests ast) (:thens ast)) v
-                                (cons (:test ast) v)
-                                (concat v [(:default ast)])))}
-    ;; NOTE ignoring metadata here
-    :const {:op :const :val (:form ast)}
-    :def {:op :def :val (:name ast) :doc (:doc ast)
-          :children (if (nil? (:init ast))
-                      nil
-                      (list (transform-ast (:init ast))))}
-    :deftype {:op :deftype :val (:name ast)
-              :children (map transform-ast (map #(% ast) (:children ast)))}
-    :do {:op :do :children (->> (conj (:statements ast) (:ret ast))
-                                (map transform-ast))}
-    :fn {:op :fn :children (->> (:local ast)
-                                (conj-not-nil (vec-to-list (:methods ast)))
-                                (map transform-ast))}
-    :fn-method {:op :fn-method :children (->> (conj (:params ast) (:body ast))
-                                              (map transform-ast))}
-    :import {:op :import :val (:class ast)}
-    :instance-call {:op :instance-call :val (:method ast)
-                    :children (->> (cons (:instance ast) (vec-to-list (:args ast)))
-                                   (map transform-ast))}
-    :instance-field {:op :instance-field :val (:field ast)
-                     :children (map transform-ast (map #(% ast) (:children ast)))}
-    :instance? {:op :instance? :val (:class ast)
-                :children (map transform-ast (map #(% ast) (:children ast)))}
-    :invoke {:op :invoke
-             :children (->> (cons (:fn ast) (vec-to-list (:args ast)))
-                            (map transform-ast))}
-    :keyword-invoke {:op :keyword-invoke :val (second (:form ast))}
-    :local {:op :local :val (:form ast)}
-    :map {:op :map :children (->> (interleave (:keys ast) (:vals ast))
-                                  (map transform-ast))}
-    :method {:op :method :val (:name ast)
-             :children (->> (vec-to-list (conj (:params ast) (:body ast)) )
-                            (cons (:this ast))
-                            (map transform-ast))}
-    :new {:op :new :children (->> (cons (:class ast) (vec-to-list (:args ast)))
-                                  (map transform-ast))}
-    :primitive-invoke {:op :primitive-invoke
-                       :children (->> (cons (:fn ast) (vec-to-list (:args ast)))
-                                      (map transform-ast))}
-    :protocol-invoke {:op :protocol-invoke
-                      :children (->> (cons (:protocol-fn ast)
-                                           (cons (:target ast) (vec-to-list (:args ast))))
-                                     (map transform-ast))}
-    :recur {:op :recur :children (map transform-ast (:exprs ast))}
-    :reify {:op :reify :children (map transform-ast (:methods ast))}
-    :set {:op :set :children (map transform-ast (:items ast))}
-    :static-call {:op :static-call :val (str (.getName (:class ast)) "/" (:method ast)) 
-                  :children (map transform-ast (:args ast))}
-    :static-field {:op :static-field :val (str (.getName (:class ast)) "/" (:method ast))}
-    ;; NOTE maybe use (second (:form ast)) instead of :var
-    :the-var {:op :the-var :val (second (:form ast))}
-    :try {:op :try :children (->> (conj-not-nil (:catches ast) (:finally ast)) 
-                                  (cons (:body ast))
-                                  (map transform-ast))}
-    :var {:op :var :val (:form ast)}
-    :vector {:op :vector :children (map transform-ast (:items ast))}
-    ;; NOTE maybe remove this meta field
-    :with-meta {:op :with-meta :children (list (transform-ast (:expr ast)))} 
-    (:let :letfn :loop) {:op (:op ast)
-                   :children (->> (conj (:bindings ast) (:body ast))
-                                  (map transform-ast))}
-    (:cast-test :cast-then :catch :host-interop :if :monitor-enter
-                :monitor-exit :quote :set! :throw)
-    {:op (:op ast) :children (map transform-ast (map #(% ast) (:children ast)))}
-    (throw (Exception. "Undefined AST node !!!"))))
+  :op)
+
+;; TODO check if uniquified are bad or good for ML
+;; TODO maybe remove meta-data stuff
+
+(defmethod transform-ast :binding [ast]
+  {:op :binding :val (:form ast) 
+   :children (map transform-ast (map #(% ast) (:children ast)))})
+
+(defmethod transform-ast :case [ast]
+  {:op :case :children
+   (map transform-ast (as-> (interleave (:tests ast) (:thens ast)) v
+                        (cons (:test ast) v)
+                        (concat v [(:default ast)])))})
+
+;; NOTE ignoring metadata here
+(defmethod transform-ast :const [ast]
+  {:op :const :val (:form ast)})
+
+(defmethod transform-ast :def [ast]
+  {:op :def :val (:name ast) :doc (:doc ast)
+   :children (if (nil? (:init ast)) nil
+                 (list (transform-ast (:init ast))))})
+
+(defmethod transform-ast :deftype [ast]
+  {:op :deftype :val (:name ast)
+   :children (map transform-ast (map #(% ast) (:children ast)))})
+
+(defmethod transform-ast :do [ast]
+  {:op :do :children (->> (conj (:statements ast) (:ret ast))
+                          (map transform-ast))})
+
+(defmethod transform-ast :fn [ast]
+  {:op :fn :children (->> (:local ast)
+                          (conj-not-nil (vec-to-list (:methods ast)))
+                          (map transform-ast))})
+
+(defmethod transform-ast :fn-method [ast]
+  {:op :fn-method :children (->> (conj (:params ast) (:body ast))
+                                 (map transform-ast))})
+
+(defmethod transform-ast :import [ast]
+  {:op :import :val (:class ast)})
+
+(defmethod transform-ast :instance-call [ast]
+  {:op :instance-call :val (:method ast)
+   :children (->> (cons (:instance ast) (vec-to-list (:args ast)))
+                  (map transform-ast))})
+
+(defmethod transform-ast :instance-field [ast]
+  {:op :instance-field :val (:field ast)
+   :children (map transform-ast (map #(% ast) (:children ast)))})
+
+(defmethod transform-ast :instance? [ast]
+  {:op :instance? :val (:class ast)
+   :children (map transform-ast (map #(% ast) (:children ast)))})
+
+(defmethod transform-ast :invoke [ast]
+  {:op :invoke
+   :children (->> (cons (:fn ast) (vec-to-list (:args ast)))
+                  (map transform-ast))})
+
+(defmethod transform-ast :keyword-invoke [ast]
+  {:op :keyword-invoke :val (second (:form ast))})
+
+(defmethod transform-ast :local [ast]
+  {:op :local :val (:form ast)})
+
+(defmethod transform-ast :map [ast]
+  {:op :map :children (->> (interleave (:keys ast) (:vals ast))
+                           (map transform-ast))})
+
+(defmethod transform-ast :method [ast]
+  {:op :method :val (:name ast)
+   :children (->> (vec-to-list (conj (:params ast) (:body ast)) )
+                  (cons (:this ast)))})
+
+(defmethod transform-ast :new [ast]
+  {:op :new :children (->> (cons (:class ast) (vec-to-list (:args ast)))
+                           (map transform-ast))})
+
+(defmethod transform-ast :primitive-invoke [ast]
+  {:op :primitive-invoke
+   :children (->> (cons (:fn ast) (vec-to-list (:args ast)))
+                  (map transform-ast))})
+
+(defmethod transform-ast :protocol-invoke [ast]
+  {:op :protocol-invoke
+   :children (->> (cons (:protocol-fn ast)
+                        (cons (:target ast) (vec-to-list (:args ast))))
+                  (map transform-ast))})
+
+(defmethod transform-ast :recur [ast]
+  {:op :recur :children (map transform-ast (:exprs ast))})
+
+(defmethod transform-ast :reify [ast]
+  {:op :reify :children (map transform-ast (:methods ast))})
+
+(defmethod transform-ast :set [ast]
+  {:op :set :children (map transform-ast (:items ast))})
+
+(defmethod transform-ast :static-call [ast]
+  {:op :static-call :val (str (.getName (:class ast)) "/" (:method ast)) 
+   :children (map transform-ast (:args ast))})
+
+(defmethod transform-ast :static-field [ast]
+  {:op :static-field
+   :val (str (.getName (:class ast)) "/" (:method ast))})
+
+(defmethod transform-ast :the-var [ast]
+  {:op :the-var :val (second (:form ast))})
+
+(defmethod transform-ast :try [ast]
+  {:op :try :children (->> (conj-not-nil (:catches ast) (:finally ast)) 
+                           (cons (:body ast))
+                           (map transform-ast))})
+
+;; NOTE maybe use (second (:form ast)) instead of :var
+(defmethod transform-ast :var [ast]
+  {:op :var :val (:form ast)})
+
+(defmethod transform-ast :vector [ast]
+  {:op :vector :children (map transform-ast (:items ast))})
+
+;; NOTE maybe remove this meta field
+(defmethod transform-ast :with-meta [ast]
+  {:op :with-meta :children (list (transform-ast (:expr ast)))})
+
+(defn- bindings-body-case [ast]
+  {:op (:op ast)
+   :children (->> (conj (:bindings ast) (:body ast))
+                  (map transform-ast))})
+
+(defmethod transform-ast :let [ast] (bindings-body-case ast))
+(defmethod transform-ast :letfn [ast] (bindings-body-case ast))
+(defmethod transform-ast :loop [ast] (bindings-body-case ast))
+
+(defn- children-case [ast]
+  {:op (:op ast)
+   :children (map transform-ast (map #(% ast) (:children ast)))})
+
+(defmethod transform-ast :case-test [ast] (children-case ast))
+(defmethod transform-ast :case-then [ast] (children-case ast))
+(defmethod transform-ast :catch [ast] (children-case ast))
+(defmethod transform-ast :host-interop [ast] (children-case ast))
+(defmethod transform-ast :if [ast] (children-case ast))
+(defmethod transform-ast :monitor-enter [ast] (children-case ast))
+(defmethod transform-ast :monitor-exit [ast] (children-case ast))
+(defmethod transform-ast :quote [ast] (children-case ast))
+(defmethod transform-ast :set! [ast] (children-case ast))
+(defmethod transform-ast :throw [ast] (children-case ast))
+
+(defmethod transform-ast :default [_]
+  (throw (Exception. "Undefined AST node !!!")) )
 
 (defn extend-path-extensions
   "Extends all paths extension with the given operator."
