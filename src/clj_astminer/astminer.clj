@@ -332,17 +332,19 @@
                        (map #(map (comp hash-path create-ast-path) %)))]
     (map cons vals ast-paths)))
 
-;; (set! *print-length* 10)
-;; (set! *print-level* 10)
+(comment
+ (set! *print-length* 10)
+ (set! *print-level* 10)
 
-;; (require '[clojure.tools.reader :as r])
-;; (require '[clojure.tools.reader.reader-types :as t])
-;; (binding [r/*read-eval* false]
-;;  (loop [input (t/source-logging-push-back-reader "(+ #=(+ 1 2) 3) :foo")
-;;         res '[]]
-;;    (let [exp (try (r/read input false :end)
-;;                   (catch clojure.lang.ExceptionInfo e :read-err))]
-;;      (if (= exp :end) res
-;;          (recur input (if (= exp :read-err) res (conj res exp)))))))
-;; => [(+ 1 2) 3 :foo]
-;; => want just [:foo]
+ (require '[clojure.tools.reader :as r])
+ (require '[clojure.tools.reader.reader-types :as t])
+ (binding [r/*read-eval* false]
+   (loop [input (t/source-logging-push-back-reader "(+ #=(+ 1 2) 3) :foo")
+          res '[]]
+     (let [exp (try (r/read input false :end)
+                    (catch clojure.lang.ExceptionInfo e :read-err))]
+       (if (= exp :end) res
+           (recur input (if (= exp :read-err) res (conj res exp)))))))
+ ;; => [(+ 1 2) 3 :foo]
+ ;; => want just [:foo]
+ )
