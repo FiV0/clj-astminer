@@ -2,7 +2,9 @@
   :description "AST mining for clojure."
   :url "https://github.com/FiV0/clj-astminer"
   :license {:name "MIT Licence"}
-  :dependencies [[clj-jgit "1.0.0-beta2"]
+  :dependencies [[clj-http "3.10.0"]
+                 [clj-jgit "1.0.0-beta2"]
+                 [com.cemerick/pomegranate "1.1.0"]
                  [org.clojure/clojure "1.10.0"]
                  [org.clojure/math.combinatorics "0.1.6"]
                  ;; [org.clojure/core.match "0.3.0"]                 
