@@ -1,8 +1,15 @@
 (ns clj-astminer.retrieve
-  (:require [clj-http.client :as client] 
+  (:require [cemerick.pomegranate :as pome]
+            [clj-http.client :as client] 
             [clojure.tools.deps.alpha :as deps] ;; curently not in a good state
-            [clojure.tools.deps.alpha.extensions :as ext])
+            [clojure.tools.deps.alpha.extensions :as ext]
+            [clojure.tools.namespace.find :as ns-find])
   (:gen-class))
+
+(defn expand-home [s]
+  (if (.startsWith s "~")
+    (clojure.string/replace-first s "~" (System/getProperty "user.home"))
+    s))
 
 (defn get-clojars-lein-artifacts []
   (->
@@ -20,25 +27,46 @@
    (clojure.string/split v #"\n")
    (map clojure.edn/read-string v)))
 
+(defn get-clojars-non-forks []
+  (->> (get-clojars-pom-mappings)
+       (filter (fn [m] (= (:artifact-id m) (:group-id m))))))
+
+(defn namespaces-in-jar [jar-file-path]
+  "Enumerates the namespaces in th"
+  (-> jar-file-path
+      expand-home
+      java.util.jar.JarFile.
+      ns-find/find-namespaces-in-jarfile))
+
+;; (namespaces-in-jar "~/.m2/repository/clj-http/clj-http/3.10.0/clj-http-3.10.0.jar")
+
+(defn entries [jarfile]
+  (enumeration-seq (.entries zipfile)))
+
+(defn walkjar [fileName]
+  (with-open [z (java.util.jar.JarFile. fileName)]
+             (doseq [e (entries z)]
+               (println (.getName e)))))
+
+(comment
+ (pome/add-dependencies :coordinates '[[incanter "1.9.2"]]
+                        :repositories (merge cemerick.pomegranate.aether/maven-central
+                                             {"clojars" "https://clojars.org/repo"})))
+
+(comment
+ (set! *print-length* 10)
+ (set! *print-level* 10)
+ )
+
 (comment
  (get-clojars-pom-mappings)
  (def res *1)
- (->> (filter (fn [m] (-> m :artifact-id (clojure.string/includes? "pomegranate"))) res)
-      (map :artifact-id)
-      (map println)
-      dorun)
-
  (-> res first keys)
  (-> res first :artifact-id)
 
  (def artefact-url (str "https://clojars.org/api/artifacts/" *1))
  (client/get artefact-url)
  artefact-url
- )
-
-(comment
- (set! *print-length* 10)
- (set! *print-level* 10)
  )
 
 ;; curently tools.deps.alpha not in beta
