@@ -1,6 +1,8 @@
 (ns clj-astminer.core
   (:require [clj-astminer.astminer :refer
-             [file-to-asts file-to-ast-paths file-to-code2vec]]
+             [file-to-asts file-to-ast-paths file-to-code2vec
+              clojar-name-to-asts clojar-name-to-ast-paths
+              clojar-name-to-code2vec]]
             [clojure.tools.cli :refer [parse-opts]]
             [clojure.java.io :as io])
   (:gen-class))
@@ -13,6 +15,8 @@
 (def cli-options
   [["-f" "--file FILE" "File to parse and analyze."
     :default "resources/test.clj"]
+   ["-p" "--project PROJECT-NAME" "Project to retrieve from clojars."
+    :default nil]
    ["-t" "--type TYPE" "Type of output."
     :default "AST"
     :validate [#(in? ["AST" "AST-PATH" "AST-PATH-HASHED"] %)
@@ -22,8 +26,11 @@
     :default nil]
    ["-h" "--help"]])
 
+(defmethod print-dup clojure.lang.Atom [o w]
+  (print-ctor o (fn [o w] (print-dup (deref o) w)) w))
+
 (defn save-forms
-  "Save a clojure forms to file."
+  "Save clojure forms to file."
   [#^java.io.File file forms]
   (with-open [w (java.io.FileWriter. file)]
     (binding [*out* w
@@ -55,13 +62,22 @@
   (let [args (parse-opts args cli-options)
         options (:options args) 
         file (:file options)
+        project-name (:project options)
         output-file (:output options)
         type (:type options)]
     ;; TODO add error checking
-    (if (.exists (io/file file))
+    (if (nil? project-name)
       (case type
         "AST" (write-or-print (io/file output-file) (file-to-asts file))
         "AST-PATH" (write-or-print (io/file output-file) (file-to-ast-paths file))
         "AST-PATH-HASHED" (write-or-print (io/file output-file) (file-to-code2vec file)) 
         (throw (Exception. "Should not happen!!!")))
-      (println "File " file " does not exist!"))))
+      (if (.exists (io/file file)) 
+        (case type
+          "AST" (write-or-print (io/file output-file) (clojar-name-to-asts project-name))
+          "AST-PATH" (write-or-print (io/file output-file) (clojar-name-to-ast-paths project-name))
+          "AST-PATH-HASHED" (write-or-print (io/file output-file) (clojar-name-to-code2vec project-name)) 
+          (throw (Exception. "Should not happen!!!")))
+        (println "File " file " does not exist!")))))
+
+(-main "-p" "leiningen" "-o" "resources/output.txt" "-t" "AST-PATH")

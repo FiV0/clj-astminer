@@ -1,5 +1,6 @@
 (ns clj-astminer.astminer
-  (:require [clojure.math.combinatorics :as combo]
+  (:require [clj-astminer.retrieve :as retrieve]
+            [clojure.math.combinatorics :as combo]
             [clojure.tools.trace :refer [trace trace-ns untrace-ns]]
             ;; [clojure.core.match :refer [match]] 
             [clojure.tools.analyzer.ast :as ast]
@@ -245,6 +246,7 @@
   of the LCA of the two endvalues in the AST. In case of a path from a direct
   parent to an endvalue the :path1 value will be nil."
   [ast]
+  ;;FIXME contains? on keyword should not happen
   (assert (contains? ast :op))
   (cond
     (and (contains? ast :val) (contains? ast :children))
@@ -286,24 +288,48 @@
 (defn filter-for-with-vals [asts]
   (filter #(contains? % :val) asts))
 
-(defn file-to-asts [file]
+(defn to-asts
+  "Transforms a list of ASTs as returned by tools.analyzer by transform-ast."
+  [asts]
+  (map transform-ast asts))
+
+(defn file-to-asts 
   "Returns a list of asts, one ast per expression in the file."
+  [file]
   (->> (read-string-as-clj-exprs (slurp file))
        (map ana/analyze)
-       (map transform-ast)))
+       to-asts))
+
+(defn clojar-name-to-asts
+  "Returns a list of asts, one ast per expression in the clojar namespaces."
+  [name]
+  (-> (retrieve/analyze-clojar-by-name name)
+      to-asts))
 
 (defn string-to-asts [string]
   (->> (read-string-as-clj-exprs string)
        (map ana/analyze)
        (map transform-ast)))
 
+(defn asts-to-ast-paths 
+  "Creates all list of ast-path lists, one ast-path list per ast."
+  [asts]
+  (->> asts 
+       (map create-ast-paths-helper)
+       (map second)
+       (map #(map create-ast-path %))))
+
 (defn file-to-ast-paths 
   "Creates all list of ast-path lists, one ast-path list per expression."
   [file]
   (->> (file-to-asts file)
-       (map create-ast-paths-helper)
-       (map second)
-       (map #(map create-ast-path %))))
+       (asts-to-ast-paths)))
+
+(defn clojar-name-to-ast-paths 
+  "Creates all list of ast-path lists, one ast-path list per expression."
+  [name]
+  (->> (clojar-name-to-asts name)
+       (asts-to-ast-paths)))
 
 (defn code2vec-name-encoding 
   "Function name encoding as used by code2vec format."
@@ -321,16 +347,26 @@
    (->> (second ast-path) (map name) (apply str) hash)
    (nth ast-path 2)])
 
-(defn file-to-code2vec 
-  "Transforms a file to the code2vec format."
-  [file]
-  (let [asts (filter-for-with-vals (file-to-asts file))
+(defn asts-to-code2vec 
+  "Transforms a list of asts to the code2vec format."
+  [asts]
+  (let [asts (filter-for-with-vals asts)
         vals (map #(->> % :val str code2vec-name-encoding) asts)
         ast-paths (->> asts
                        (map create-ast-paths-helper)
                        (map second)
                        (map #(map (comp hash-path create-ast-path) %)))]
     (map cons vals ast-paths)))
+
+(defn file-to-code2vec 
+  "Transforms a file to the code2vec format."
+  [file]
+  (asts-to-code2vec (file-to-asts file)))
+
+(defn clojar-name-to-code2vec
+  "Transforms a clojar project to the code2vec format."
+  [name]
+  (asts-to-code2vec (clojar-name-to-asts name)))
 
 (comment
  (set! *print-length* 10)

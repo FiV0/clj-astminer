@@ -1,6 +1,6 @@
 (ns clj-astminer.retrieve
   (:require [cemerick.pomegranate :as pome]
-            [clj-http.client :as client] 
+            [clj-http.client :as client]
             [clojure.java.io :as io] 
             [clojure.tools.analyzer.jvm :as ana]
             [clojure.tools.deps.alpha :as deps] ;; curently not in a good state
@@ -27,27 +27,22 @@
    (java.util.zip.GZIPInputStream. v)
    (slurp v)
    (clojure.string/split v #"\n")
-   (map clojure.edn/read-string v)))
+   (map clojure.edn/read-string v)
+   (map #(assoc % :version (first (:versions %))) v)))
 
 (defn get-clojars-non-forks []
   (->> (get-clojars-pom-mappings)
        (filter (fn [m] (= (:artifact-id m) (:group-id m))))))
 
-(defn entries [jarfile]
-  (enumeration-seq (.entries jarfile)))
+(defn get-clojar-by-name [name]
+  (-> (client/get (str "https://clojars.org/api/artifacts/" name)
+                  {:accept :json :as :json})
+      :body
+      (clojure.set/rename-keys {:group_name :group-id
+                                :jar_name :artifact-id
+                                :latest_version :version})))
 
-(defn walkjar [fileName]
-  (with-open [z (java.util.jar.JarFile. fileName)]
-    (doseq [e (entries z)]
-      (println (.getName e)))))
-
-(defn namespaces-in-jar
-  "Enumerates the namespaces in th"
-  [jar-file-path]
-  (-> jar-file-path
-      expand-home
-      java.util.jar.JarFile.
-      ns-find/find-namespaces-in-jarfile))
+(def repo-root "~/.m2/repository")
 
 (defn create-jar-path-from-clojar-map
   "Creates the default path where the newest version of an artifact is stored on disk."
@@ -56,8 +51,8 @@
    (list repo-root
          (clojure.string/replace (:group-id m) "." "/")
          (:artifact-id m)
-         (first (:versions m))
-         (str (:artifact-id m) "-" (first (:versions m)) ".jar"))
+         (:version m)
+         (str (:artifact-id m) "-" (:version m) ".jar"))
    (interleave (repeat "/"))
    rest
    (apply str)))
@@ -67,7 +62,7 @@
   [m]
   (pome/add-dependencies
    :coordinates `[[~(symbol (:artifact-id m))
-                   ~(first (:versions m))]]
+                   ~(:version m)]]
    :repositories (merge cemerick.pomegranate.aether/maven-central
                         {"clojars" "https://clojars.org/repo"})))
 
@@ -76,15 +71,23 @@
   [ms]
   (pome/add-dependencies
    :coordinates `[~@(map #(vector (symbol (:artifact-id %))
-                                  (first (:versions %)))
+                                  (:version %))
                          ms)]
    :repositories (merge cemerick.pomegranate.aether/maven-central
                         {"clojars" "https://clojars.org/repo"})))
 
+(defn namespaces-in-jar
+  "Enumerates the namespaces in th"
+  [jar-file-path]
+  (-> jar-file-path
+      expand-home
+      java.util.jar.JarFile.
+      ns-find/find-namespaces-in-jarfile))
+
 (defn require-from-clojar-map
-  "Adds dependency from clojar "
+  "Adds dependency from clojar mapping."
   [m]
-  (do (add-dependency-from-clojar-mapping m)
+  (do (add-dependency-from-clojar-map m)
       (let [nss (-> m
                     create-jar-path-from-clojar-map
                     namespaces-in-jar)]
@@ -108,6 +111,11 @@
     (remove-nss nss)
     res))
 
+(defn analyze-clojar-by-name [name]
+  (->> (get-clojar-by-name name)
+       analyze-from-clojar-map
+       (apply concat)))
+
 (comment
  (set! *print-length* 10)
  (set! *print-level* 10)
@@ -121,7 +129,10 @@
  (defn walkjar [fileName]
    (with-open [z (java.util.jar.JarFile. fileName)]
      (doseq [e (entries z)]
-       (println (.getName e))))))
+       (println (.getName e)))))
+
+ (defn jar-file? [file]
+   (clojure.string/ends-with? file ".jar")))
 
 ;; curently tools.deps.alpha not in beta
 (comment
