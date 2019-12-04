@@ -80,4 +80,6 @@
           (throw (Exception. "Should not happen!!!")))
         (println "File " file " does not exist!")))))
 
-(-main "-p" "leiningen" "-o" "resources/output.txt" "-t" "AST-PATH")
+(comment
+  (-main "-p" "leiningen" "-o" "resources/output.txt" "-t" "AST-PATH")
+  )

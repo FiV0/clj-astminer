@@ -126,7 +126,8 @@
 (defmethod transform-ast :method [ast]
   {:op :method :val (:name ast)
    :children (->> (vec-to-list (conj (:params ast) (:body ast)) )
-                  (cons (:this ast)))})
+                  (cons (:this ast))
+                  (map transform-ast))})
 
 (defmethod transform-ast :new [ast]
   {:op :new :children (->> (cons (:class ast) (vec-to-list (:args ast)))
@@ -204,7 +205,7 @@
 (defmethod transform-ast :throw [ast] (children-case ast))
 
 (defmethod transform-ast :default [_]
-  (throw (Exception. "Undefined AST node !!!")) )
+  (throw (Exception. "Undefined AST node !!!")))
 
 (defn extend-path-extensions
   "Extends all paths extension with the given operator."
@@ -246,7 +247,6 @@
   of the LCA of the two endvalues in the AST. In case of a path from a direct
   parent to an endvalue the :path1 value will be nil."
   [ast]
-  ;;FIXME contains? on keyword should not happen
   (assert (contains? ast :op))
   (cond
     (and (contains? ast :val) (contains? ast :children))
