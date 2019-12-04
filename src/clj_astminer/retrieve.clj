@@ -106,15 +106,26 @@
   (map remove-ns nss))
 
 (defn analyze-from-clojar-map [m]
+  (prn "Analyzing " (:artifact-id m))
   (let [nss (require-from-clojar-map m)
         res (map ana/analyze-ns nss)]
     (remove-nss nss)
+    (prn "Analyzed " (:artifact-id m))
     res))
 
 (defn analyze-clojar-by-name [name]
   (->> (get-clojar-by-name name)
        analyze-from-clojar-map
        (apply concat)))
+
+(defn analyze-clojar-non-forks []
+  (->> (get-clojars-non-forks)
+       (map analyze-from-clojar-map)
+       (map #(apply concat %))
+       (apply concat)))
+
+(comment
+  (analyze-clojar-non-forks))
 
 (comment
  (set! *print-length* 10)
