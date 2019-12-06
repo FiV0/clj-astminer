@@ -90,25 +90,38 @@
   (do (add-dependency-from-clojar-map m)
       (let [nss (-> m
                     create-jar-path-from-clojar-map
-                    namespaces-in-jar)]
-        (->>
-         (for [ns nss]
-           (try (do
-                  (require `~ns)
-                  ns)
-                (catch clojure.lang.Compiler$CompilerException e
-                  (prn (ex-data e)))))
-         (filter #(not (nil? %)))))))
+                    namespaces-in-jar)
+            res (for [ns nss]
+                  (try (do
+                         (require `~ns)
+                         ns)
+                       (catch clojure.lang.Compiler$CompilerException e
+                         (prn "Compiler exception: " (ex-data e)))
+                       ;; (catch clojure.lang.ExceptionInfo e
+                       ;;   (prn "Exception information: " (ex-data e)))
+                       ;; (catch Exception e
+                       ;;   (prn "General exception:" (ex-data e)))
+                       ))]
+        (if (some nil? res)
+          '()
+          res))))
 
 (defn remove-nss 
   "Remove namespaces."
   [nss]
   (map remove-ns nss))
 
+(defn analyze-ns-error-prone [ns]
+  "Analyzes a namespace and returns nil in case of an error."
+  (try (ana/analyze-ns ns)
+       (catch Exception e
+         (prn "General exception:" (ex-data e)))))
+
 (defn analyze-from-clojar-map [m]
   (prn "Analyzing " (:artifact-id m))
   (let [nss (require-from-clojar-map m)
-        res (map ana/analyze-ns nss)]
+        res (->> (map analyze-ns-error-prone nss)
+                 (filter #(not (nil? %))))]
     (remove-nss nss)
     (prn "Analyzed " (:artifact-id m))
     res))
@@ -118,11 +131,15 @@
        analyze-from-clojar-map
        (apply concat)))
 
-(defn analyze-clojar-non-forks []
-  (->> (get-clojars-non-forks)
-       (map analyze-from-clojar-map)
-       (map #(apply concat %))
-       (apply concat)))
+(defn analyze-clojar-non-forks
+  ([] (analyze-clojar-non-forks -1))
+  ([limit]
+   (as-> (get-clojars-non-forks) v
+     (take (if (= -1 limit) (count v) limit) v)
+     (map analyze-from-clojar-map v)
+     (map #(apply concat %) v)
+     (apply concat v)
+     (dorun v))))
 
 (comment
   (analyze-clojar-non-forks))
