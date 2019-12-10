@@ -138,11 +138,10 @@
      (take (if (= -1 limit) (count v) limit) v)
      (map analyze-from-clojar-map v)
      (map #(apply concat %) v)
-     (apply concat v)
-     (dorun v))))
+     (apply concat v))))
 
 (comment
-  (analyze-clojar-non-forks))
+  (count (analyze-clojar-non-forks 10)))
 
 (comment
  (set! *print-length* 10)

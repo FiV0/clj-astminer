@@ -368,6 +368,13 @@
   [name]
   (asts-to-code2vec (clojar-name-to-asts name)))
 
+(defn all-clojars-to-code2vec
+  "Transforms all clojar projects to the code2vec format."
+  []
+  (->> (retrieve/analyze-clojar-non-forks 10) ;; TODO for now
+       to-asts
+       asts-to-code2vec))
+
 (comment
  (set! *print-length* 10)
  (set! *print-level* 10)

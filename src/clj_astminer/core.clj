@@ -2,7 +2,8 @@
   (:require [clj-astminer.astminer :refer
              [file-to-asts file-to-ast-paths file-to-code2vec
               clojar-name-to-asts clojar-name-to-ast-paths
-              clojar-name-to-code2vec]]
+              clojar-name-to-code2vec all-clojars-to-code2vec]]
+            [clojure.core.match :refer [match]]
             [clojure.tools.cli :refer [parse-opts]]
             [clojure.java.io :as io])
   (:gen-class))
@@ -20,10 +21,10 @@
    ["-t" "--type TYPE" "Type of output."
     :default "AST"
     :validate [#(in? ["AST" "AST-PATH" "AST-PATH-HASHED"] %)
-               "TYPE must be one of AST AST-PATH or AST-PATH-HASHED"]
-    ]
+               "TYPE must be one of AST AST-PATH or AST-PATH-HASHED"]]
    ["-o" "--output OUTPUT-FILE" "File to output the results to."
     :default nil]
+   ["-a" "--all" "Load all non fork projects from clojar."]
    ["-h" "--help"]])
 
 (defmethod print-dup clojure.lang.Atom [o w]
@@ -65,9 +66,14 @@
         file (:file options)
         project-name (:project options)
         output-file (:output options)
-        type (:type options)]
+        type (:type options)
+        all (:all options)]
     ;; TODO add error checking
-    (prn type)
+    ;; (match [all project-name (.exists (io/file file)) type]
+    ;;        [true _ _ "AST"] (throw (Exception. "Not yet implemented!!!")))
+    ;;        [true _ _ "AST-PATH"] (throw (Exception. "Not yet implemented!!!"))
+    ;;        [true _ _ "AST-PATH-HASHED"]
+    ;;        (write-or-print (io/file output-file) (all-clojars-to-code2vec))
     (if (nil? project-name)
       (if (.exists (io/file file))
         (case type
