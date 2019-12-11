@@ -77,7 +77,8 @@
 
 (defmethod transform-ast :deftype [ast]
   {:op :deftype :val (:name ast)
-   :children (map transform-ast (map #(% ast) (:children ast)))})
+   :children (->> (concat (:fields ast) (:methods ast))
+                  (map transform-ast))})
 
 (defmethod transform-ast :do [ast]
   {:op :do :children (->> (conj (:statements ast) (:ret ast))
@@ -204,7 +205,8 @@
 (defmethod transform-ast :set! [ast] (children-case ast))
 (defmethod transform-ast :throw [ast] (children-case ast))
 
-(defmethod transform-ast :default [_]
+(defmethod transform-ast :default [ast]
+  (println ast)
   (throw (Exception. "Undefined AST node !!!")))
 
 (defn extend-path-extensions
@@ -306,6 +308,12 @@
   (-> (retrieve/analyze-clojar-by-name name)
       to-asts))
 
+(defn all-clojars-to-asts
+  "Returns all the asts in the clojar repositories."
+  []
+  (->> (retrieve/analyze-clojar-non-forks)
+       to-asts))
+
 (defn string-to-asts [string]
   (->> (read-string-as-clj-exprs string)
        (map ana/analyze)
@@ -326,9 +334,15 @@
        (asts-to-ast-paths)))
 
 (defn clojar-name-to-ast-paths 
-  "Creates all list of ast-path lists, one ast-path list per expression."
+  "Creates a list of ast-path lists from a clojar repository."
   [name]
   (->> (clojar-name-to-asts name)
+       (asts-to-ast-paths)))
+
+(defn all-clojars-to-ast-paths
+  "Creates a list of ast-path lists from all clojar repositories."
+  []
+  (->> (all-clojars-to-asts)
        (asts-to-ast-paths)))
 
 (defn code2vec-name-encoding 
@@ -371,7 +385,7 @@
 (defn all-clojars-to-code2vec
   "Transforms all clojar projects to the code2vec format."
   []
-  (->> (retrieve/analyze-clojar-non-forks 10) ;; TODO for now
+  (->> (retrieve/analyze-clojar-non-forks)
        to-asts
        asts-to-code2vec))
 

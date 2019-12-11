@@ -2,7 +2,8 @@
   (:require [clj-astminer.astminer :refer
              [file-to-asts file-to-ast-paths file-to-code2vec
               clojar-name-to-asts clojar-name-to-ast-paths
-              clojar-name-to-code2vec all-clojars-to-code2vec]]
+              clojar-name-to-code2vec all-clojars-to-asts
+              all-clojars-to-ast-paths all-clojars-to-code2vec]]
             [clojure.core.match :refer [match]]
             [clojure.tools.cli :refer [parse-opts]]
             [clojure.java.io :as io])
@@ -69,12 +70,11 @@
         type (:type options)
         all (:all options)]
     ;; TODO add error checking
-    (println [all project-name (.exists (io/file file)) type])
     (match [all project-name (.exists (io/file file)) type]
-           [true _ _ "AST"] (throw (Exception. "Not yet implemented!!!"))
-           [true _ _ "AST-PATH"] (throw (Exception. "Not yet implemented!!!"))
+           [true _ _ "AST"] (write-or-print (io/file output-file) (all-clojars-to-asts) true) 
+           [true _ _ "AST-PATH"] (write-or-print (io/file output-file) (all-clojars-to-ast-paths) true)
            [true _ _ "AST-PATH-HASHED"]
-           (write-or-print (io/file output-file) (all-clojars-to-code2vec))
+           (write-or-print (io/file output-file) (all-clojars-to-code2vec) false)
            [_ nil false _] (println "File " file " does not exist!")
            [_ nil true "AST"] (write-or-print (io/file output-file) (file-to-asts file) true) 
            [_ nil true "AST-PATH"] (write-or-print (io/file output-file) (file-to-ast-paths file) true) 
