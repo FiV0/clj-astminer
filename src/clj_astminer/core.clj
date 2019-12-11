@@ -69,24 +69,24 @@
         type (:type options)
         all (:all options)]
     ;; TODO add error checking
-    ;; (match [all project-name (.exists (io/file file)) type]
-    ;;        [true _ _ "AST"] (throw (Exception. "Not yet implemented!!!")))
-    ;;        [true _ _ "AST-PATH"] (throw (Exception. "Not yet implemented!!!"))
-    ;;        [true _ _ "AST-PATH-HASHED"]
-    ;;        (write-or-print (io/file output-file) (all-clojars-to-code2vec))
-    (if (nil? project-name)
-      (if (.exists (io/file file))
-        (case type
-          "AST" (write-or-print (io/file output-file) (file-to-asts file) true)
-          "AST-PATH" (write-or-print (io/file output-file) (file-to-ast-paths file) true)
-          "AST-PATH-HASHED" (write-or-print (io/file output-file) (file-to-code2vec file) false) 
-          (throw (Exception. "Should not happen!!!")))
-        (println "File " file " does not exist!"))
-      (case type
-        "AST" (write-or-print (io/file output-file) (clojar-name-to-asts project-name) true)
-        "AST-PATH" (write-or-print (io/file output-file) (clojar-name-to-ast-paths project-name) true)
-        "AST-PATH-HASHED" (write-or-print (io/file output-file) (clojar-name-to-code2vec project-name) false) 
-        (throw (Exception. "Should not happen!!!"))))))
+    (println [all project-name (.exists (io/file file)) type])
+    (match [all project-name (.exists (io/file file)) type]
+           [true _ _ "AST"] (throw (Exception. "Not yet implemented!!!"))
+           [true _ _ "AST-PATH"] (throw (Exception. "Not yet implemented!!!"))
+           [true _ _ "AST-PATH-HASHED"]
+           (write-or-print (io/file output-file) (all-clojars-to-code2vec))
+           [_ nil false _] (println "File " file " does not exist!")
+           [_ nil true "AST"] (write-or-print (io/file output-file) (file-to-asts file) true) 
+           [_ nil true "AST-PATH"] (write-or-print (io/file output-file) (file-to-ast-paths file) true) 
+           [_ nil true "AST-PATH-HASHED"]
+           (write-or-print (io/file output-file) (file-to-code2vec file) false) 
+           [_ project-name _ "AST"]
+           (write-or-print (io/file output-file) (clojar-name-to-asts project-name) true)
+           [_ project-name _ "AST-PATH"]
+           (write-or-print (io/file output-file) (clojar-name-to-ast-paths project-name) true)
+           [_ project-name _ "AST-PATH-HASHED"]
+           (write-or-print (io/file output-file) (clojar-name-to-code2vec project-name) false)
+           :else (throw (Exception. "Should not happen!!!")))))
 
 (comment
   (-main "-p" "leiningen" "-o" "resources/output.txt" "-t" "AST-PATH-HASHED")
