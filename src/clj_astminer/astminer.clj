@@ -206,7 +206,7 @@
 (defmethod transform-ast :throw [ast] (children-case ast))
 
 (defmethod transform-ast :default [ast]
-  (println ast)
+  ;; (println ast)
   (throw (Exception. "Undefined AST node !!!")))
 
 (defn extend-path-extensions
@@ -307,6 +307,25 @@
   [name]
   (-> (retrieve/analyze-clojar-by-name name)
       to-asts))
+
+(comment
+ (def res (retrieve/analyze-clojar-by-name "chu.graph"))
+ (loop [asts res
+        i 0]
+   (if (empty? asts) nil
+       (do
+         (println i)
+         (create-ast-paths-helper (transform-ast (first asts)))
+         (recur (rest asts) (inc i)))))
+
+ (def res2 (nth res 201))
+ (:op res2)
+
+ (def res3 (transform-ast res2))
+ res3
+
+ (create-ast-paths-helper (transform-ast res2))
+ )
 
 (defn all-clojars-to-asts
   "Returns all the asts in the clojar repositories."

@@ -15,6 +15,11 @@
     (testing "with resources/test.clj"
       (is (= 2 (count (file-to-asts "resources/test.clj")))))))
 
+(deftest reader-conditional-test  
+  (binding [r/*read-eval* false]
+    (testing "with resources/reader-conditional-test.clj"
+      (is (= 1 (count (file-to-asts "resources/reader-conditional-test.clj")))))))
+
 (deftest extend-path-extensions-test
   (testing "extend-path-extensions"
     (is (= '({:path (:foo :bar)} {:path (:foo :buzz)})
@@ -45,3 +50,4 @@
 
 ;; (ns-unmap 'clj-astminer.astminer-test '-main)
 ;; (run-tests)
+;; (reader-conditional-test)
