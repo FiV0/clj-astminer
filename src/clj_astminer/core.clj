@@ -94,5 +94,9 @@
   (-main "-p" "chu.graph" "-o" "resources/output.txt" "-t" "AST-PATH-HASHED")
   (-main "-o" "resources/output.txt" "-t" "AST-PATH-HASHED")
   (-main "-a" "-o" "resources/output.txt" "-t" "AST-PATH-HASHED")
-  (-main "-t" "AST" "-f" "resources/reader-conditional-test.clj")
+  (-main "-t" "AST" "-f" "resources/reader-conditional-")
+
+  (try
+    (-main "-p" "chu.graph" "-o" "resources/output.txt" "-t" "AST-PATH-HASHED")
+    (catch Exception e (ex-data e)))
   )

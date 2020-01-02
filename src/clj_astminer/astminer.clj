@@ -23,7 +23,6 @@
 
 (defn read-string-as-clj-exprs
   "Reads a string of Clojure expressions into a vector.
-
   An read-eval expression is not evaluated but rather parsed as is."
   ([string] (read-string-as-clj-exprs string true))
   ([string read-eval?]
@@ -134,8 +133,8 @@
   {:op :new :children (->> (cons (:class ast) (vec-to-list (:args ast)))
                            (map transform-ast))})
 
-(defmethod transform-ast :primitive-invoke [ast]
-  {:op :primitive-invoke
+(defmethod transform-ast :prim-invoke [ast]
+  {:op :prim-invoke
    :children (->> (cons (:fn ast) (vec-to-list (:args ast)))
                   (map transform-ast))})
 
@@ -206,8 +205,7 @@
 (defmethod transform-ast :throw [ast] (children-case ast))
 
 (defmethod transform-ast :default [ast]
-  ;; (println ast)
-  (throw (Exception. "Undefined AST node !!!")))
+  (throw (ex-info "Undefined AST node !!!" ast)))
 
 (defn extend-path-extensions
   "Extends all paths extension with the given operator."
@@ -307,25 +305,6 @@
   [name]
   (-> (retrieve/analyze-clojar-by-name name)
       to-asts))
-
-(comment
- (def res (retrieve/analyze-clojar-by-name "chu.graph"))
- (loop [asts res
-        i 0]
-   (if (empty? asts) nil
-       (do
-         (println i)
-         (create-ast-paths-helper (transform-ast (first asts)))
-         (recur (rest asts) (inc i)))))
-
- (def res2 (nth res 201))
- (:op res2)
-
- (def res3 (transform-ast res2))
- res3
-
- (create-ast-paths-helper (transform-ast res2))
- )
 
 (defn all-clojars-to-asts
   "Returns all the asts in the clojar repositories."
