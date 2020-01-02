@@ -352,27 +352,12 @@
     #(st/replace % #"-" "|" ))
    name))
 
-(defn escape-string [s?]
-  (if (string? s?)
-    (str \" s? \")
-    s?))
-
 (defn hash-path 
   "Hashes an ast-path, outputs triple as used by code2vec."
   [ast-path]
   [(first ast-path)
    (->> (second ast-path) (map name) (apply str) hash)
    (nth ast-path 2)])
-
-(defn code2vec-stringify
-  "Transforms a code2vec list into string."
-  [ls]
-  (clojure.string/join
-   " "
-   (cons (first ls)
-         (map #(clojure.string/join
-                ","
-                (map escape-string %)) (rest ls)))))
 
 (defn asts-to-code2vec 
   "Transforms a list of asts to the code2vec format."
@@ -384,8 +369,7 @@
                        (map second)
                        (map #(map (comp hash-path create-ast-path) %)))]
     (->>
-     (map cons vals ast-paths)
-     (map code2vec-stringify))))
+     (map cons vals ast-paths))))
 
 (defn file-to-code2vec 
   "Transforms a file to the code2vec format."
@@ -399,24 +383,28 @@
 
 (defn all-clojars-to-code2vec
   "Transforms all clojar projects to the code2vec format."
-  []
-  (->> (retrieve/analyze-clojar-non-forks)
-       to-asts
-       asts-to-code2vec))
+  ([]
+   (->> (retrieve/analyze-clojar-non-forks)
+        to-asts
+        asts-to-code2vec))
+  ([limit]
+   (->> (retrieve/analyze-clojar-non-forks limit)
+        to-asts
+        asts-to-code2vec)))
 
 (comment
- (set! *print-length* 10)
- (set! *print-level* 10)
+  (set! *print-length* 10)
+  (set! *print-level* 10)
 
- (require '[clojure.tools.reader :as r])
- (require '[clojure.tools.reader.reader-types :as t])
- (binding [r/*read-eval* false]
-   (loop [input (t/source-logging-push-back-reader "(+ #=(+ 1 2) 3) :foo")
-          res '[]]
-     (let [exp (try (r/read input false :end)
-                    (catch clojure.lang.ExceptionInfo e :read-err))]
-       (if (= exp :end) res
-           (recur input (if (= exp :read-err) res (conj res exp)))))))
- ;; => [(+ 1 2) 3 :foo]
- ;; => want just [:foo]
- )
+  (require '[clojure.tools.reader :as r])
+  (require '[clojure.tools.reader.reader-types :as t])
+  (binding [r/*read-eval* false]
+    (loop [input (t/source-logging-push-back-reader "(+ #=(+ 1 2) 3) :foo")
+           res '[]]
+      (let [exp (try (r/read input false :end)
+                     (catch clojure.lang.ExceptionInfo e :read-err))]
+        (if (= exp :end) res
+            (recur input (if (= exp :read-err) res (conj res exp)))))))
+  ;; => [(+ 1 2) 3 :foo]
+  ;; => want just [:foo]
+  )

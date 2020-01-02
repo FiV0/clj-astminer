@@ -26,6 +26,9 @@
    ["-o" "--output OUTPUT-FILE" "File to output the results to."
     :default nil]
    ["-a" "--all" "Load all non fork projects from clojar."]
+   ["-l" "--limit NUMBER" "Limit the number of clojar repos."
+    :default 100
+    :parse-fn #(Integer/parseInt %)]
    ["-h" "--help"]])
 
 (defmethod print-dup clojure.lang.Atom [o w]
@@ -33,13 +36,30 @@
 
 (defn save-forms
   "Save clojure forms to file."
-  ([#^java.io.File file forms] (save-forms file forms true))
-  ([#^java.io.File file forms print-dup as-string?]
+  ([#^java.io.File file forms print-dup]
    (with-open [w (java.io.FileWriter. file)]
      (binding [*out* w
                *print-dup* print-dup]
-       (let [print-function (if as-string? println prn)]
-         (dorun (map #(print-function %) forms)))))))
+       (dorun (map prn forms))))))
+
+(defn build-code2vec-string [ls]
+  (apply str
+         (print-str (first ls) " ")
+         (reduce (fn [res [x y z]]
+                   (str res
+                        (pr-str x) (print-str ",")
+                        (pr-str y) (print-str ",")
+                        (pr-str z) (print-str " ")))
+                 ""
+                 (rest ls))))
+
+(defn save-forms-code2vec
+  "Save clojure forms to file."
+  ([#^java.io.File file forms print-dup]
+   (with-open [w (java.io.FileWriter. file)]
+     (binding [*out* w
+               *print-dup* print-dup]
+       (dorun (map #(println (build-code2vec-string %)) forms))))))
 
 (defn load-forms
   "Load clojure forms from file."
@@ -55,12 +75,16 @@
 
 (defn write-or-print
   "Writes forms to file if not nil o/w print to stdout."
-  ([#^java.io.File file forms print-dup]
-   (write-or-print file forms print-dup false))
-  ([#^java.io.File file forms print-dup as-string?] 
+  ([#^java.io.File file forms print-dup] 
    (if (nil? file)
      (dorun (map println forms))
-     (save-forms file forms print-dup as-string?))))
+     (save-forms file forms print-dup))))
+
+(defn write-or-print-code2vec
+  ([#^java.io.File file forms print-dup] 
+   (if (nil? file)
+     (dorun (map #(println (build-code2vec-string %)) forms))
+     (save-forms-code2vec file forms print-dup))))
 
 (defn -main
   "Main entry point for clj-astminer. Currently "
@@ -71,33 +95,36 @@
         project-name (:project options)
         output-file (io/file (:output options))
         type (:type options)
-        all (:all options)]
+        all (:all options)
+        limit (:limit options)]
     ;; TODO add error checking
     ;; (println [all project-name (.exists (io/file file)) type])
     (match [all project-name (.exists (io/file file)) type]
            [true _ _ "AST"] (write-or-print output-file (all-clojars-to-asts) true) 
            [true _ _ "AST-PATH"] (write-or-print output-file (all-clojars-to-ast-paths) true)
            [true _ _ "AST-PATH-HASHED"]
-           (write-or-print output-file (all-clojars-to-code2vec) false true)
+           (write-or-print-code2vec output-file (all-clojars-to-code2vec limit) false)
            [_ nil false _] (println "File " file " does not exist!")
            [_ nil true "AST"] (write-or-print output-file (file-to-asts file) true) 
            [_ nil true "AST-PATH"] (write-or-print output-file (file-to-ast-paths file) true) 
            [_ nil true "AST-PATH-HASHED"]
-           (write-or-print output-file (file-to-code2vec file) false true) 
+           (write-or-print-code2vec output-file (file-to-code2vec file) false) 
            [_ project-name _ "AST"]
            (write-or-print output-file (clojar-name-to-asts project-name) true)
            [_ project-name _ "AST-PATH"]
            (write-or-print output-file (clojar-name-to-ast-paths project-name) true)
            [_ project-name _ "AST-PATH-HASHED"]
            ;; (clojar-name-to-code2vec project-name false true)
-           (write-or-print output-file (clojar-name-to-code2vec project-name) false true)
+           (write-or-print-code2vec output-file (clojar-name-to-code2vec project-name) false)
            :else (throw (Exception. "Should not happen!!!")))))
 
 (comment
   (-main "-p" "chu.graph" "-o" "resources/output.txt" "-t" "AST-PATH-HASHED")
+  (-main "-p" "viz-cljc" "-o" "resources/output.txt" "-t" "AST-PATH-HASHED")
   (-main "-o" "resources/output.txt" "-t" "AST-PATH-HASHED")
   (-main "-t" "AST-PATH-HASHED")
   (-main "-a" "-o" "resources/output.txt" "-t" "AST-PATH-HASHED")
+  (-main "-a" "-l" "3" "-o" "resources/output.txt" "-t" "AST-PATH-HASHED")
   (-main "-t" "AST" "-f" "resources/reader-conditional-")
 
   (try
