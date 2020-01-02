@@ -352,12 +352,27 @@
     #(st/replace % #"-" "|" ))
    name))
 
+(defn escape-string [s?]
+  (if (string? s?)
+    (str \" s? \")
+    s?))
+
 (defn hash-path 
   "Hashes an ast-path, outputs triple as used by code2vec."
   [ast-path]
   [(first ast-path)
    (->> (second ast-path) (map name) (apply str) hash)
    (nth ast-path 2)])
+
+(defn code2vec-stringify
+  "Transforms a code2vec list into string."
+  [ls]
+  (clojure.string/join
+   " "
+   (cons (first ls)
+         (map #(clojure.string/join
+                ","
+                (map escape-string %)) (rest ls)))))
 
 (defn asts-to-code2vec 
   "Transforms a list of asts to the code2vec format."
@@ -368,7 +383,9 @@
                        (map create-ast-paths-helper)
                        (map second)
                        (map #(map (comp hash-path create-ast-path) %)))]
-    (map cons vals ast-paths)))
+    (->>
+     (map cons vals ast-paths)
+     (map code2vec-stringify))))
 
 (defn file-to-code2vec 
   "Transforms a file to the code2vec format."

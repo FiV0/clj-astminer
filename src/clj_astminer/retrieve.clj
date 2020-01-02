@@ -141,12 +141,10 @@
      (apply concat v))))
 
 (comment
-  (count (analyze-clojar-non-forks 10)))
-
-(comment
- (set! *print-length* 10)
- (set! *print-level* 10)
- )
+  (set! *print-length* 10)
+  (set! *print-level* 10)
+  (count (analyze-clojar-non-forks 10))
+  )
 
 ;; currently not used
 (comment

@@ -34,30 +34,33 @@
 (defn save-forms
   "Save clojure forms to file."
   ([#^java.io.File file forms] (save-forms file forms true))
-  ([#^java.io.File file forms print-dup]
+  ([#^java.io.File file forms print-dup as-string?]
    (with-open [w (java.io.FileWriter. file)]
      (binding [*out* w
                *print-dup* print-dup]
-       (dorun (map #(prn %) forms))))))
+       (let [print-function (if as-string? println prn)]
+         (dorun (map #(print-function %) forms)))))))
 
 (defn load-forms
   "Load clojure forms from file."
   [#^java.io.File file]
   (with-open [r (java.io.PushbackReader. (java.io.FileReader. file))]
     (let [end (gensym "end")]
-     (loop [reader r
-            res '()]
-       (let [form (read reader false end)]
-         (if (= form end)
-           (reverse res)
-           (recur reader (cons form res))))))))
+      (loop [reader r
+             res '()]
+        (let [form (read reader false end)]
+          (if (= form end)
+            (reverse res)
+            (recur reader (cons form res))))))))
 
 (defn write-or-print
   "Writes forms to file if not nil o/w print to stdout."
-  [#^java.io.File file forms print-dup]
-  (if (nil? file)
-    (dorun (map println forms))
-    (save-forms file forms print-dup)))
+  ([#^java.io.File file forms print-dup]
+   (write-or-print file forms print-dup false))
+  ([#^java.io.File file forms print-dup as-string?] 
+   (if (nil? file)
+     (dorun (map println forms))
+     (save-forms file forms print-dup as-string?))))
 
 (defn -main
   "Main entry point for clj-astminer. Currently "
@@ -75,24 +78,25 @@
            [true _ _ "AST"] (write-or-print output-file (all-clojars-to-asts) true) 
            [true _ _ "AST-PATH"] (write-or-print output-file (all-clojars-to-ast-paths) true)
            [true _ _ "AST-PATH-HASHED"]
-           (write-or-print output-file (all-clojars-to-code2vec) false)
+           (write-or-print output-file (all-clojars-to-code2vec) false true)
            [_ nil false _] (println "File " file " does not exist!")
            [_ nil true "AST"] (write-or-print output-file (file-to-asts file) true) 
            [_ nil true "AST-PATH"] (write-or-print output-file (file-to-ast-paths file) true) 
            [_ nil true "AST-PATH-HASHED"]
-           (write-or-print output-file (file-to-code2vec file) false) 
+           (write-or-print output-file (file-to-code2vec file) false true) 
            [_ project-name _ "AST"]
            (write-or-print output-file (clojar-name-to-asts project-name) true)
            [_ project-name _ "AST-PATH"]
            (write-or-print output-file (clojar-name-to-ast-paths project-name) true)
            [_ project-name _ "AST-PATH-HASHED"]
-           ;; (clojar-name-to-code2vec project-name)
-           (write-or-print output-file (clojar-name-to-code2vec project-name) false)
+           ;; (clojar-name-to-code2vec project-name false true)
+           (write-or-print output-file (clojar-name-to-code2vec project-name) false true)
            :else (throw (Exception. "Should not happen!!!")))))
 
 (comment
   (-main "-p" "chu.graph" "-o" "resources/output.txt" "-t" "AST-PATH-HASHED")
   (-main "-o" "resources/output.txt" "-t" "AST-PATH-HASHED")
+  (-main "-t" "AST-PATH-HASHED")
   (-main "-a" "-o" "resources/output.txt" "-t" "AST-PATH-HASHED")
   (-main "-t" "AST" "-f" "resources/reader-conditional-")
 
