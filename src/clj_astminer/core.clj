@@ -124,8 +124,10 @@
   (-main "-o" "resources/output.txt" "-t" "AST-PATH-HASHED")
   (-main "-t" "AST-PATH-HASHED")
   (-main "-a" "-o" "resources/output.txt" "-t" "AST-PATH-HASHED")
-  (-main "-a" "-l" "3" "-o" "resources/output.txt" "-t" "AST-PATH-HASHED")
+  (-main "-a" "-l" "2" "-o" "resources/output.txt" "-t" "AST-PATH-HASHED")
   (-main "-t" "AST" "-f" "resources/reader-conditional-")
+  (clojure.lang.DynamicClassLoader)
+
 
   (try
     (-main "-p" "chu.graph" "-o" "resources/output.txt" "-t" "AST-PATH-HASHED")
