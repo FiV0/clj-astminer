@@ -89,34 +89,37 @@
 (defn -main
   "Main entry point for clj-astminer. Currently "
   [& args]
-  (let [args (parse-opts args cli-options)
-        options (:options args) 
-        file (:file options)
-        project-name (:project options)
-        output-file (io/file (:output options))
-        type (:type options)
-        all (:all options)
-        limit (:limit options)]
-    ;; TODO add error checking
-    ;; (println [all project-name (.exists (io/file file)) type])
-    (match [all project-name (.exists (io/file file)) type]
-           [true _ _ "AST"] (write-or-print output-file (all-clojars-to-asts) true) 
-           [true _ _ "AST-PATH"] (write-or-print output-file (all-clojars-to-ast-paths) true)
-           [true _ _ "AST-PATH-HASHED"]
-           (write-or-print-code2vec output-file (all-clojars-to-code2vec limit) false)
-           [_ nil false _] (println "File " file " does not exist!")
-           [_ nil true "AST"] (write-or-print output-file (file-to-asts file) true) 
-           [_ nil true "AST-PATH"] (write-or-print output-file (file-to-ast-paths file) true) 
-           [_ nil true "AST-PATH-HASHED"]
-           (write-or-print-code2vec output-file (file-to-code2vec file) false) 
-           [_ project-name _ "AST"]
-           (write-or-print output-file (clojar-name-to-asts project-name) true)
-           [_ project-name _ "AST-PATH"]
-           (write-or-print output-file (clojar-name-to-ast-paths project-name) true)
-           [_ project-name _ "AST-PATH-HASHED"]
-           ;; (clojar-name-to-code2vec project-name false true)
-           (write-or-print-code2vec output-file (clojar-name-to-code2vec project-name) false)
-           :else (throw (Exception. "Should not happen!!!")))))
+  (let [cl (.getContextClassLoader (Thread/currentThread))]
+    (.setContextClassLoader (Thread/currentThread) (clojure.lang.DynamicClassLoader. cl))
+    (let [args (parse-opts args cli-options)
+          options (:options args) 
+          file (:file options)
+          project-name (:project options)
+          output-file (io/file (:output options))
+          type (:type options)
+          all (:all options)
+          limit (:limit options)]
+      ;; TODO add error checking
+      ;; (println [all project-name (.exists (io/file file)) type])
+      (match [all project-name (.exists (io/file file)) type]
+             [true _ _ "AST"] (write-or-print output-file (all-clojars-to-asts) true) 
+             [true _ _ "AST-PATH"] (write-or-print output-file (all-clojars-to-ast-paths) true)
+             [true _ _ "AST-PATH-HASHED"]
+             (write-or-print-code2vec output-file (all-clojars-to-code2vec limit) false)
+             [_ nil false _] (println "File " file " does not exist!")
+             [_ nil true "AST"] (write-or-print output-file (file-to-asts file) true) 
+             [_ nil true "AST-PATH"] (write-or-print output-file (file-to-ast-paths file) true) 
+             [_ nil true "AST-PATH-HASHED"]
+             (write-or-print-code2vec output-file (file-to-code2vec file) false) 
+             [_ project-name _ "AST"]
+             (write-or-print output-file (clojar-name-to-asts project-name) true)
+             [_ project-name _ "AST-PATH"]
+             (write-or-print output-file (clojar-name-to-ast-paths project-name) true)
+             [_ project-name _ "AST-PATH-HASHED"]
+             ;; (clojar-name-to-code2vec project-name false true)
+             (write-or-print-code2vec output-file (clojar-name-to-code2vec project-name) false)
+             :else (throw (Exception. "Should not happen!!!")))))
+  )
 
 (comment
   (-main "-p" "chu.graph" "-o" "resources/output.txt" "-t" "AST-PATH-HASHED")
