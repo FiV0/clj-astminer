@@ -161,15 +161,22 @@
 
 ;; curently tools.deps.alpha not in beta
 (comment
-  ;; authentication issue, don't know why
-  (deps/resolve-deps
-   '{:deps
-     {next.jdbc {:git/url "https://github.com/seancorfield/next-jdb.git"
-                 :sha "32e9f338d5ad09c1f47aaa960e01931cfc70d02d"}}}
-   nil)
+  (require '[clojure.tools.deps.alpha.util.maven :as mvn])
+  (require '[clojure.tools.deps.alpha.repl :refer [add-lib]])
+  (require '[clojure.tools.gitlibs :as gl])
+  (defn load-master [lib]
+    (let [git (str "https://github.com/" lib ".git")]
+      (add-lib lib {:git/url git :sha (gl/resolve git "master")})))
+  (add-lib 'org.clojure/tools.trace {:mvn/version "0.7.10" }) ;; works
+  (load-master 'clojure/tools.trace) ;; doesnt
+  (add-lib 'org.clojure/data.json {:mvn/version "0.2.7" }) ;; works
+  (load-master 'clojure/data.json) ;; works
+
   ;; lein currently does not work
+  ;; (load-master 'weavejester/compojure)
   (deps/resolve-deps
    '{:deps
      {compojure.core {:git/url "https://github.com/weavejester/compojure.git"
                       :sha "bb2fcc7ffdc910555d24ff64a8e7ffacb2c1c478"}}}
-   nil))
+   nil)
+  )
