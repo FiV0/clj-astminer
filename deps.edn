@@ -4,11 +4,11 @@
   clj-jgit {:mvn/version "1.0.0-beta2"}
   com.cemerick/pomegranate {:mvn/version "1.1.0"}
   org.clojure/clojure {:mvn/version "1.10.0"}
-  org.clojure/core.match {:mvn/version "0.3.0"}                 
-  org.clojure/math.combinatorics {:mvn/verison "0.1.6"}
+  org.clojure/core.match {:mvn/version "0.3.0"}
+  org.clojure/math.combinatorics {:mvn/version "0.1.6"}
   org.clojure/tools.gitlibs {:mvn/version "0.2.64"}
   org.clojure/tools.analyzer.jvm {:mvn/version "0.7.2"}
-  org.clojure/tools.namespace {:mvn/verion "0.3.1"}
+  org.clojure/tools.namespace {:mvn/version "0.3.1"}
   org.clojure/tools.trace {:mvn/version "0.7.10"}
   org.clojure/tools.cli {:mvn/version "0.4.2"}
   com.github.clojure/tools.deps.alpha
