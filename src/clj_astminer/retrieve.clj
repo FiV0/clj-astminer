@@ -64,7 +64,9 @@
    :coordinates `[[~(symbol (:artifact-id m))
                    ~(:version m)]]
    :repositories (merge cemerick.pomegranate.aether/maven-central
-                        {"clojars" "https://clojars.org/repo"})))
+                        {"clojars" "https://clojars.org/repo"})
+   ;; :classloader (.getParent @Compiler/LOADER)
+   ))
 
 (defn add-dependencies-from-clojar-maps
   "Adds dependencies from clojar mappings. Uses newest version."
@@ -74,7 +76,9 @@
                                   (:version %))
                          ms)]
    :repositories (merge cemerick.pomegranate.aether/maven-central
-                        {"clojars" "https://clojars.org/repo"})))
+                        {"clojars" "https://clojars.org/repo"})
+   ;; :classloader (.getParent @Compiler/LOADER)
+   ))
 
 (defn namespaces-in-jar
   "Enumerates the namespaces in th"

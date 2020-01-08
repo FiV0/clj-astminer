@@ -42,24 +42,28 @@
                *print-dup* print-dup]
        (dorun (map prn forms))))))
 
-(defn build-code2vec-string [ls]
-  (apply str
-         (print-str (first ls) " ")
-         (reduce (fn [res [x y z]]
-                   (str res
-                        (pr-str x) (print-str ",")
-                        (pr-str y) (print-str ",")
-                        (pr-str z) (print-str " ")))
-                 ""
-                 (rest ls))))
+(defn build-code2vec-string [ls i]
+  (println "cucu" i)
+  #dbg ^{:break/when (>= i 111)}
+  (let [res (apply str
+                   (print-str (first ls) " ")
+                   (reduce (fn [res [x y z]]
+                             (str res
+                                  (pr-str x) (print-str ",")
+                                  (pr-str y) (print-str ",")
+                                  (pr-str z) (print-str " ")))
+                           ""
+                           (rest ls)))]
+    (println "cici")
+    res))
 
 (defn save-forms-code2vec
   "Save clojure forms to file."
   ([#^java.io.File file forms print-dup]
-   (with-open [w (java.io.FileWriter. file)]
-     (binding [*out* w
-               *print-dup* print-dup]
-       (dorun (map #(println (build-code2vec-string %)) forms))))))
+   (with-open [w (clojure.java.io/writer file)]
+     ;; (dorun (map-indexed #(.write w (build-code2vec-string %2 %1)) forms))
+     (dorun (map-indexed #(build-code2vec-string %2 %1) forms))
+     )))
 
 (defn load-forms
   "Load clojure forms from file."
@@ -135,4 +139,7 @@
   (try
     (-main "-p" "chu.graph" "-o" "resources/output.txt" "-t" "AST-PATH-HASHED")
     (catch Exception e (ex-data e)))
+
+  (set! *print-level* 10)
+  (set! *print-length* 10)
   )
