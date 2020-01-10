@@ -233,6 +233,16 @@
                             :op op
                             :path2 (:path path-ext) :val2 (:val path-ext)}))))
 
+(def ^:dynamic *max-path-length* 8)
+
+(defn filter-path-extensions [path-exts]
+  (filter #(<= (count (:path %)) *max-path-length*) path-exts))
+
+(defn filter-paths [paths]
+  (filter #(<= (+ (count (:path1 %))
+                  (count (:path2 %)))
+               *max-path-length*) paths))
+
 (defn create-ast-paths-helper
   "Creates all ast-paths for a given ast transformed by transform-ast.
 
@@ -253,19 +263,23 @@
     (let [children-results (map create-ast-paths-helper (:children ast))
           children-path-extensions (map first children-results)
           children-results (mapcat second children-results)
-          {:keys [op val]} ast]
-      [(cons {:path (list op) :val val}
-             (extend-path-extensions op (apply concat children-path-extensions)))
-       (concat (combine-path-extensions-direct op val children-path-extensions)
-               (combine-path-extensions op children-path-extensions)
-               children-results)])
+          {:keys [op val]} ast
+          path-extensions (cons {:path (list op) :val val}
+                                (extend-path-extensions op (apply concat children-path-extensions)))
+          paths (concat (combine-path-extensions-direct op val children-path-extensions)
+                        (combine-path-extensions op children-path-extensions)
+                        children-results)]
+      [(filter-path-extensions path-extensions)
+       (filter-paths paths)])
     (contains? ast :children)
-    (let* [children-results (map create-ast-paths-helper (:children ast))
-           children-path-extensions (map first children-results)
-           children-results (mapcat second children-results)]
-      [(extend-path-extensions (:op ast) (apply concat children-path-extensions ))
-       (concat (combine-path-extensions (:op ast) children-path-extensions)
-               children-results)])
+    (let [children-results (map create-ast-paths-helper (:children ast))
+          children-path-extensions (map first children-results)
+          children-results (mapcat second children-results)
+          path-extensions (extend-path-extensions (:op ast) (apply concat children-path-extensions))
+          paths (concat (combine-path-extensions (:op ast) children-path-extensions)
+                        children-results)]
+      [(filter-path-extensions path-extensions)
+       (filter-paths paths)])
     ;; TODO check if node exists that only contains 
     :else  [(list {:path (list (:op ast)) :val (:val ast)}) '()]))
 

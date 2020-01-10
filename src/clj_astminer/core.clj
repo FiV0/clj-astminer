@@ -42,9 +42,9 @@
                *print-dup* print-dup]
        (dorun (map prn forms))))))
 
-(defn build-code2vec-string [ls i]
-  (println "cucu" i)
-  #dbg ^{:break/when (>= i 111)}
+(def *max-number-paths* 2000)
+
+(defn build-code2vec-string [ls]
   (let [res (apply str
                    (print-str (first ls) " ")
                    (reduce (fn [res [x y z]]
@@ -53,8 +53,7 @@
                                   (pr-str y) (print-str ",")
                                   (pr-str z) (print-str " ")))
                            ""
-                           (rest ls)))]
-    (println "cici")
+                           (take *max-number-paths* (rest ls))))]
     res))
 
 (defn save-forms-code2vec
@@ -62,8 +61,7 @@
   ([#^java.io.File file forms print-dup]
    (with-open [w (clojure.java.io/writer file)]
      ;; (dorun (map-indexed #(.write w (build-code2vec-string %2 %1)) forms))
-     (dorun (map-indexed #(build-code2vec-string %2 %1) forms))
-     )))
+     (dorun (map #(build-code2vec-string %) forms)))))
 
 (defn load-forms
   "Load clojure forms from file."
@@ -122,7 +120,7 @@
              [_ project-name _ "AST-PATH-HASHED"]
              ;; (clojar-name-to-code2vec project-name false true)
              (write-or-print-code2vec output-file (clojar-name-to-code2vec project-name) false)
-             :else (throw (Exception. "Should not happen!!!")))))
+             :else (throw (Exception. "Should not ")))))
   )
 
 (comment
