@@ -1,11 +1,13 @@
 (ns clj-astminer.retrieve
-  (:require [cemerick.pomegranate :as pome]
-            [clj-http.client :as client]
-            [clojure.java.io :as io] 
-            [clojure.tools.analyzer.jvm :as ana]
-            [clojure.tools.deps.alpha :as deps] ;; curently not in a good state
-            [clojure.tools.deps.alpha.extensions :as ext]
-            [clojure.tools.namespace.find :as ns-find])
+  (:require ;; [cemerick.pomegranate :as pome]
+   [clj-http.client :as client]
+   [clojure.java.io :as io] 
+   [clojure.tools.analyzer.jvm :as ana]
+   [clojure.tools.deps.alpha.util.maven :as mvn]
+   [clojure.tools.deps.alpha.repl :refer [add-lib]]
+   ;; [clojure.tools.deps.alpha :as deps] ;; curently not in a good state
+   ;; [clojure.tools.deps.alpha.extensions :as ext]
+   [clojure.tools.namespace.find :as ns-find])
   (:gen-class))
 
 (defn expand-home [s]
@@ -57,28 +59,41 @@
    rest
    (apply str)))
 
+
 (defn add-dependency-from-clojar-map
   "Adds a dependency from a clojar mapping. Uses newest version."
   [m]
-  (pome/add-dependencies
-   :coordinates `[[~(symbol (:artifact-id m))
-                   ~(:version m)]]
-   :repositories (merge cemerick.pomegranate.aether/maven-central
-                        {"clojars" "https://clojars.org/repo"})
-   ;; :classloader (.getParent @Compiler/LOADER)
-   ))
+  (try
+    (do
+      (binding [*warn-on-reflection* false]
+        (add-lib `~(symbol (:artifact-id m)) {:mvn/version (:version m)}))
+      true)
+    (catch Exception e
+      (do (println "Failed getting dependency " (:artifact-id m))
+          (println "Reason: "(ex-data e))
+          false)))
+  ;; (pome/add-dependencies
+  ;;  :coordinates `[[~(symbol (:artifact-id m))
+  ;;                  ~(:version m)]]
+  ;;  :repositories (merge cemerick.pomegranate.aether/maven-central
+  ;;                       {"clojars" "https://clojars.org/repo"})
+  ;; :classloader (.getParent @Compiler/LOADER)
+  ;; )
+  )
 
 (defn add-dependencies-from-clojar-maps
   "Adds dependencies from clojar mappings. Uses newest version."
   [ms]
-  (pome/add-dependencies
-   :coordinates `[~@(map #(vector (symbol (:artifact-id %))
-                                  (:version %))
-                         ms)]
-   :repositories (merge cemerick.pomegranate.aether/maven-central
-                        {"clojars" "https://clojars.org/repo"})
-   ;; :classloader (.getParent @Compiler/LOADER)
-   ))
+  (every? true? (for [m ms] (add-dependency-from-clojar-map m)))
+  ;; (pome/add-dependencies
+  ;;  :coordinates `[~@(map #(vector (symbol (:artifact-id %))
+  ;;                                 (:version %))
+  ;;                        ms)]
+  ;;  :repositories (merge cemerick.pomegranate.aether/maven-central
+  ;;                       {"clojars" "https://clojars.org/repo"})
+  ;;  ;; :classloader (.getParent @Compiler/LOADER)
+  ;;  )
+  )
 
 (defn namespaces-in-jar
   "Enumerates the namespaces in th"
@@ -86,29 +101,32 @@
   (-> jar-file-path
       expand-home
       java.util.jar.JarFile.
-      ns-find/find-namespaces-in-jarfile))
+      (ns-find/find-namespaces-in-jarfile ns-find/clj)))
 
 (defn require-from-clojar-map
   "Adds dependency from clojar mapping."
   [m]
-  (do (add-dependency-from-clojar-map m)
-      (let [nss (-> m
-                    create-jar-path-from-clojar-map
-                    namespaces-in-jar)
-            res (for [ns nss]
-                  (try (do
-                         (require `~ns)
-                         ns)
-                       (catch clojure.lang.Compiler$CompilerException e
-                         (prn "Compiler exception: " (ex-data e)))
-                       ;; (catch clojure.lang.ExceptionInfo e
-                       ;;   (prn "Exception information: " (ex-data e)))
-                       ;; (catch Exception e
-                       ;;   (prn "General exception:" (ex-data e)))
-                       ))]
-        (if (some nil? res)
-          '()
-          res))))
+  (if (add-dependency-from-clojar-map m)
+    (let [nss (-> m
+                  create-jar-path-from-clojar-map
+                  namespaces-in-jar)
+          res (for [ns nss]
+                (try (do
+                       (require `~ns)
+                       ns)
+                     (catch clojure.lang.Compiler$CompilerException e
+                       (prn "Compiler exception: " (ex-data e)))
+                     (catch Error e
+                       (prn "Requiring Error: " e))
+                     ;; (catch clojure.lang.ExceptionInfo e
+                     ;;   (prn "Exception information: " (ex-data e)))
+                     ;; (catch Exception e
+                     ;;   (prn "General exception:" (ex-data e)))
+                     ))]
+      (if (some nil? res)
+        '()
+        res)
+      '())))
 
 (defn remove-nss 
   "Remove namespaces."

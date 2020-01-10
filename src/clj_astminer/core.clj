@@ -125,11 +125,15 @@
 
 (comment
   (-main "-p" "chu.graph" "-o" "resources/output.txt" "-t" "AST-PATH-HASHED")
+  (-main "-p" "glittering" "-o" "resources/output.txt" "-t" "AST-PATH-HASHED")
+  (-main "-p" "lambdacd-lineup" "-o" "resources/output.txt" "-t" "AST-PATH-HASHED")
+  (-main "-p" "anki-cljs" "-o" "resources/output.txt" "-t" "AST-PATH-HASHED")
+
   (-main "-p" "viz-cljc" "-o" "resources/output.txt" "-t" "AST-PATH-HASHED")
   (-main "-o" "resources/output.txt" "-t" "AST-PATH-HASHED")
   (-main "-t" "AST-PATH-HASHED")
   (-main "-a" "-o" "resources/output.txt" "-t" "AST-PATH-HASHED")
-  (-main "-a" "-l" "2" "-o" "resources/output.txt" "-t" "AST-PATH-HASHED")
+  (-main "-a" "-l" "100" "-o" "resources/output.txt" "-t" "AST-PATH-HASHED")
   (-main "-t" "AST" "-f" "resources/reader-conditional-")
   (clojure.lang.DynamicClassLoader)
 

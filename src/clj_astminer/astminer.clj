@@ -235,10 +235,16 @@
 
 (def ^:dynamic *max-path-length* 8)
 
-(defn filter-path-extensions [path-exts]
+(defn filter-path-extensions
+  "Filters path-extensions (as described in create-ast-paths-helper) for
+  path extensions that are shorter or equal to *max-path-length*."
+  [path-exts]
   (filter #(<= (count (:path %)) *max-path-length*) path-exts))
 
-(defn filter-paths [paths]
+(defn filter-paths
+  "Filters paths (as described in create-ast-paths-helper) for
+  paths that are shorter or equal to *max-path-length*."
+  [paths]
   (filter #(<= (+ (count (:path1 %))
                   (count (:path2 %)))
                *max-path-length*) paths))

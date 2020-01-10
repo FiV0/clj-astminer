@@ -5,7 +5,7 @@
   :dependencies [[cheshire "5.9.0"]
                  [clj-http "3.10.0"]
                  [clj-jgit "1.0.0-beta2"]
-                 [com.cemerick/pomegranate "1.1.0"]
+                 ;; [com.cemerick/pomegranate "1.1.0"]
                  [org.clojure/clojure "1.10.0"]
                  [org.clojure/core.match "0.3.0"]                 
                  [org.clojure/math.combinatorics "0.1.6"]
