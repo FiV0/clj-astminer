@@ -65,7 +65,7 @@
   [m]
   (try
     (do
-      (binding [*warn-on-reflection* false]
+      (binding [*warn-on-reflection* false] ;; TODO doesn't weem to work
         (add-lib `~(symbol (:artifact-id m)) {:mvn/version (:version m)}))
       true)
     (catch Exception e
@@ -116,9 +116,12 @@
 
 (defn analyze-ns-error-prone [ns]
   "Analyzes a namespace and returns nil in case of an error."
+  (println ns)
   (try (ana/analyze-ns ns)
        (catch Exception e
-         (prn "General exception:" (ex-data e)))))
+         (prn "General exception:" (ex-data e)))
+       (catch Error e
+         (prn "General error:" e))))
 
 (defn analyze-from-clojar-map [m]
   (prn "Analyzing " (:artifact-id m))
@@ -148,22 +151,20 @@
   (set! *print-level* 10)
   (->>
    (take 2 (get-clojars-non-forks))
-   (map analyze-from-clojar-map)
-   )
-  )
+   (map analyze-from-clojar-map)))
 
 ;; currently not used
 (comment
- (defn entries [jarfile]
-   (enumeration-seq (.entries jarfile)))
+  (defn entries [jarfile]
+    (enumeration-seq (.entries jarfile)))
 
- (defn walkjar [fileName]
-   (with-open [z (java.util.jar.JarFile. fileName)]
-     (doseq [e (entries z)]
-       (println (.getName e)))))
+  (defn walkjar [fileName]
+    (with-open [z (java.util.jar.JarFile. fileName)]
+      (doseq [e (entries z)]
+        (println (.getName e)))))
 
- (defn jar-file? [file]
-   (clojure.string/ends-with? file ".jar")))
+  (defn jar-file? [file]
+    (clojure.string/ends-with? file ".jar")))
 
 ;; curently tools.deps.alpha not in beta
 (comment
@@ -185,4 +186,7 @@
      {compojure.core {:git/url "https://github.com/weavejester/compojure.git"
                       :sha "bb2fcc7ffdc910555d24ff64a8e7ffacb2c1c478"}}}
    nil)
-  )
+
+  (->> (take 100 (get-clojars-non-forks))
+       (map :group-id)
+       (map-indexed println)))

@@ -9,6 +9,8 @@
             [clojure.java.io :as io])
   (:gen-class))
 
+(set! *warn-on-reflection* false)
+
 (defn in? 
   "True if coll contains elm."
   [coll elm]  
@@ -45,6 +47,8 @@
 (def ^:dynamic *max-number-paths* 2000)
 
 (defn build-code2vec-string [ls]
+  (when (= (first ls) "encode|url|component")
+    (println "TOTO"))
   (let [res (apply str
                    (print-str (first ls) " ")
                    (reduce (fn [res [x y z]]
@@ -127,14 +131,18 @@
   (-main "-p" "glittering" "-o" "resources/output.txt" "-t" "AST-PATH-HASHED")
   (-main "-p" "lambdacd-lineup" "-o" "resources/output.txt" "-t" "AST-PATH-HASHED")
   (-main "-p" "anki-cljs" "-o" "resources/output.txt" "-t" "AST-PATH-HASHED")
+  (-main "-p" "thalia" "-o" "resources/output.txt" "-t" "AST-PATH-HASHED")
+  (-main "-p" "rojat-arrows" "-o" "resources/output.txt" "-t" "AST-PATH-HASHED")
 
   (-main "-p" "viz-cljc" "-o" "resources/output.txt" "-t" "AST-PATH-HASHED")
   (-main "-o" "resources/output.txt" "-t" "AST-PATH-HASHED")
   (-main "-t" "AST-PATH-HASHED")
   (-main "-a" "-o" "resources/output.txt" "-t" "AST-PATH-HASHED")
-  (-main "-a" "-l" "2" "-o" "resources/output.txt" "-t" "AST-PATH-HASHED")
+  (-main "-a" "-l" "20" "-o" "resources/output.txt" "-t" "AST-PATH-HASHED")
   (-main "-t" "AST" "-f" "resources/reader-conditional-")
   (clojure.lang.DynamicClassLoader)
+
+  (dorun (clojar-name-to-code2vec "rojat-arrows"))
 
 
   (try

@@ -302,6 +302,19 @@
            (interleave (repeat ">") (:path2 path)))
    (:val2 path)])
 
+(defn regex? [re]
+  "Check if the argument is a Regex."
+  (= java.util.regex.Pattern (type re)))
+
+(defn ast-path-contains-regex? [[val1 path val2]]
+  "Checks if the ast-path contains a regex at the end."
+  (or (regex? val1) (regex? val2)))
+
+;; TODO maybe remove strings as well
+(defn remove-regex-from-ast-paths [ast-paths]
+  "Removes ast-paths that end in regex expressions."
+  (remove ast-path-contains-regex? ast-paths))
+
 (defn filter-for-defs [asts]
   (filter #(= (:op %) :def) asts))
 
@@ -343,7 +356,9 @@
   (->> asts 
        (map create-ast-paths-helper)
        (map second)
-       (map #(map create-ast-path %))))
+       (map #(map create-ast-path %))
+       ;; (map #(remove-regex-from-ast-paths %))
+       ))
 
 (defn file-to-ast-paths 
   "Creates all list of ast-path lists, one ast-path list per expression."
@@ -387,7 +402,8 @@
         ast-paths (->> asts
                        (map create-ast-paths-helper)
                        (map second)
-                       (map #(map (comp hash-path create-ast-path) %)))]
+                       (map #(map (comp hash-path create-ast-path) %))
+                       (map #(remove-regex-from-ast-paths %)))]
     (->>
      (map cons vals ast-paths))))
 
@@ -427,4 +443,5 @@
             (recur input (if (= exp :read-err) res (conj res exp)))))))
   ;; => [(+ 1 2) 3 :foo]
   ;; => want just [:foo]
-  )
+
+  (->> (clojar-name-to-ast-paths "thalia")))
