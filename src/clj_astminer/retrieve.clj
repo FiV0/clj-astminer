@@ -71,29 +71,12 @@
     (catch Exception e
       (do (println "Failed getting dependency " (:artifact-id m))
           (println "Reason: "(ex-data e))
-          false)))
-  ;; (pome/add-dependencies
-  ;;  :coordinates `[[~(symbol (:artifact-id m))
-  ;;                  ~(:version m)]]
-  ;;  :repositories (merge cemerick.pomegranate.aether/maven-central
-  ;;                       {"clojars" "https://clojars.org/repo"})
-  ;; :classloader (.getParent @Compiler/LOADER)
-  ;; )
-  )
+          false))))
 
 (defn add-dependencies-from-clojar-maps
   "Adds dependencies from clojar mappings. Uses newest version."
   [ms]
-  (every? true? (for [m ms] (add-dependency-from-clojar-map m)))
-  ;; (pome/add-dependencies
-  ;;  :coordinates `[~@(map #(vector (symbol (:artifact-id %))
-  ;;                                 (:version %))
-  ;;                        ms)]
-  ;;  :repositories (merge cemerick.pomegranate.aether/maven-central
-  ;;                       {"clojars" "https://clojars.org/repo"})
-  ;;  ;; :classloader (.getParent @Compiler/LOADER)
-  ;;  )
-  )
+  (every? true? (for [m ms] (add-dependency-from-clojar-map m))))
 
 (defn namespaces-in-jar
   "Enumerates the namespaces in th"
@@ -116,17 +99,15 @@
                        ns)
                      (catch clojure.lang.Compiler$CompilerException e
                        (prn "Compiler exception: " (ex-data e)))
+                     (catch java.io.FileNotFoundException e
+                       (prn "FileNotFound Error: " e))
                      (catch Error e
-                       (prn "Requiring Error: " e))
-                     ;; (catch clojure.lang.ExceptionInfo e
-                     ;;   (prn "Exception information: " (ex-data e)))
-                     ;; (catch Exception e
-                     ;;   (prn "General exception:" (ex-data e)))
+                       (prn "General error:" e))
                      ))]
       (if (some nil? res)
         '()
-        res)
-      '())))
+        res))
+    '()))
 
 (defn remove-nss 
   "Remove namespaces."
@@ -165,7 +146,10 @@
 (comment
   (set! *print-length* 10)
   (set! *print-level* 10)
-  (count (analyze-clojar-non-forks 10))
+  (->>
+   (take 2 (get-clojars-non-forks))
+   (map analyze-from-clojar-map)
+   )
   )
 
 ;; currently not used

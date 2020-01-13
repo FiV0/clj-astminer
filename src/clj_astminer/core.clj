@@ -42,7 +42,7 @@
                *print-dup* print-dup]
        (dorun (map prn forms))))))
 
-(def *max-number-paths* 2000)
+(def ^:dynamic *max-number-paths* 2000)
 
 (defn build-code2vec-string [ls]
   (let [res (apply str
@@ -53,15 +53,15 @@
                                   (pr-str y) (print-str ",")
                                   (pr-str z) (print-str " ")))
                            ""
-                           (take *max-number-paths* (rest ls))))]
+                           (take *max-number-paths* (rest ls)))
+                   "\n")]
     res))
 
 (defn save-forms-code2vec
   "Save clojure forms to file."
   ([#^java.io.File file forms print-dup]
    (with-open [w (clojure.java.io/writer file)]
-     ;; (dorun (map-indexed #(.write w (build-code2vec-string %2 %1)) forms))
-     (dorun (map #(build-code2vec-string %) forms)))))
+     (dorun (map #(.write w (build-code2vec-string %)) forms)))))
 
 (defn load-forms
   "Load clojure forms from file."
@@ -120,8 +120,7 @@
              [_ project-name _ "AST-PATH-HASHED"]
              ;; (clojar-name-to-code2vec project-name false true)
              (write-or-print-code2vec output-file (clojar-name-to-code2vec project-name) false)
-             :else (throw (Exception. "Should not ")))))
-  )
+             :else (throw (Exception. "Should not "))))))
 
 (comment
   (-main "-p" "chu.graph" "-o" "resources/output.txt" "-t" "AST-PATH-HASHED")
@@ -133,7 +132,7 @@
   (-main "-o" "resources/output.txt" "-t" "AST-PATH-HASHED")
   (-main "-t" "AST-PATH-HASHED")
   (-main "-a" "-o" "resources/output.txt" "-t" "AST-PATH-HASHED")
-  (-main "-a" "-l" "100" "-o" "resources/output.txt" "-t" "AST-PATH-HASHED")
+  (-main "-a" "-l" "2" "-o" "resources/output.txt" "-t" "AST-PATH-HASHED")
   (-main "-t" "AST" "-f" "resources/reader-conditional-")
   (clojure.lang.DynamicClassLoader)
 
