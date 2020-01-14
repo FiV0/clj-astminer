@@ -98,7 +98,7 @@
                        (require `~ns)
                        ns)
                      (catch clojure.lang.Compiler$CompilerException e
-                       (prn "Compiler exception: " (ex-data e)))
+                       (prn "Compiler exception: " e))
                      (catch java.io.FileNotFoundException e
                        (prn "FileNotFound Error: " e))
                      (catch Error e
@@ -188,4 +188,27 @@
 
   (->> (take 100 (get-clojars-non-forks))
        (map :group-id)
-       (map-indexed println)))
+       (map-indexed println))
+
+  )
+
+
+(comment
+  (->> (get-clojar-by-name "duct.logger.honeybadger")
+       create-jar-path-from-clojar-map
+       namespaces-in-jar
+       ;; (require-from-clojar-map)
+       )
+  (def nss *1)
+  nss
+  (for [ns nss] (println ns))
+
+  (add-lib 'duct.logger.honeybadger {:mvn/version "0.2.0"})
+  (add-lib 'org.clojure/tools.namespace {:mvn/version "0.3.1"})
+  (add-lib 'org.clojure/java.classpath {:mvn/version "0.3.0"})
+  (clojure.tools.namespace.find/find-namespaces)
+  (->>
+   (for [jar (clojure.java.classpath/classpath-jarfiles)]
+     (.getName ^java.util.jar.JarFile jar))
+   (filter #(clojure.string/includes? % "duct")))
+  (require '[duct.logger.honeybadger]))

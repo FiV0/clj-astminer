@@ -47,8 +47,6 @@
 (def ^:dynamic *max-number-paths* 2000)
 
 (defn build-code2vec-string [ls]
-  (when (= (first ls) "encode|url|component")
-    (println "TOTO"))
   (let [res (apply str
                    (print-str (first ls) " ")
                    (reduce (fn [res [x y z]]
@@ -132,7 +130,7 @@
   (-main "-p" "lambdacd-lineup" "-o" "resources/output.txt" "-t" "AST-PATH-HASHED")
   (-main "-p" "anki-cljs" "-o" "resources/output.txt" "-t" "AST-PATH-HASHED")
   (-main "-p" "thalia" "-o" "resources/output.txt" "-t" "AST-PATH-HASHED")
-  (-main "-p" "rojat-arrows" "-o" "resources/output.txt" "-t" "AST-PATH-HASHED")
+  (-main "-p" "dadysql" "-o" "resources/output.txt" "-t" "AST-PATH-HASHED")
 
   (-main "-p" "viz-cljc" "-o" "resources/output.txt" "-t" "AST-PATH-HASHED")
   (-main "-t" "AST-PATH-HASHED")
