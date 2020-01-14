@@ -116,7 +116,6 @@
 
 (defn analyze-ns-error-prone [ns]
   "Analyzes a namespace and returns nil in case of an error."
-  (println ns)
   (try (ana/analyze-ns ns)
        (catch Exception e
          (prn "General exception:" (ex-data e)))

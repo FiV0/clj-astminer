@@ -310,10 +310,14 @@
   "Checks if the ast-path contains a regex at the end."
   (or (regex? val1) (regex? val2)))
 
-;; TODO maybe remove strings as well
-(defn remove-regex-from-ast-paths [ast-paths]
+(defn ast-path-contains-string? [[val1 path val2]]
+  "Checks if the ast-path contains a regex at the end."
+  (or (string? val1) (string? val2)))
+
+(defn remove-stringlike-from-ast-paths [ast-paths]
   "Removes ast-paths that end in regex expressions."
-  (remove ast-path-contains-regex? ast-paths))
+  (->> (remove ast-path-contains-regex? ast-paths)
+       (remove ast-path-contains-string?)))
 
 (defn filter-for-defs [asts]
   (filter #(= (:op %) :def) asts))
@@ -403,7 +407,7 @@
                        (map create-ast-paths-helper)
                        (map second)
                        (map #(map (comp hash-path create-ast-path) %))
-                       (map #(remove-regex-from-ast-paths %)))]
+                       (map #(remove-stringlike-from-ast-paths %)))]
     (->>
      (map cons vals ast-paths))))
 

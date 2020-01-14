@@ -135,6 +135,7 @@
   (-main "-p" "rojat-arrows" "-o" "resources/output.txt" "-t" "AST-PATH-HASHED")
 
   (-main "-p" "viz-cljc" "-o" "resources/output.txt" "-t" "AST-PATH-HASHED")
+  (-main "-t" "AST-PATH-HASHED")
   (-main "-o" "resources/output.txt" "-t" "AST-PATH-HASHED")
   (-main "-t" "AST-PATH-HASHED")
   (-main "-a" "-o" "resources/output.txt" "-t" "AST-PATH-HASHED")
