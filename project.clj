@@ -9,7 +9,7 @@
                  [org.clojure/clojure "1.10.0"]
                  [org.clojure/core.match "0.3.0"]                 
                  [org.clojure/math.combinatorics "0.1.6"]
-                 ;; [org.clojure/tools.gitlibs "0.2.64"]
+                 [org.clojure/tools.gitlibs "0.2.64"]
                  [org.clojure/tools.analyzer.jvm "0.7.2"]
                  [org.clojure/tools.namespace "0.3.1"]
                  [org.clojure/tools.trace "0.7.10"]
