@@ -432,6 +432,12 @@
         to-asts
         asts-to-code2vec)))
 
+(defn clojars-mappings-to-code2vec
+  [clojar-maps limit]
+  (->> (take limit clojar-maps)
+       to-asts
+       asts-to-code2vec))
+
 (comment
   (set! *print-length* 10)
   (set! *print-level* 10)
@@ -449,3 +455,4 @@
   ;; => want just [:foo]
 
   (->> (clojar-name-to-ast-paths "thalia")))
+;;; 

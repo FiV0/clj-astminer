@@ -103,8 +103,10 @@
                        (prn "FileNotFound Error: " e))
                      (catch Error e
                        (prn "General error:" e))
+                     (catch Exception e
+                       (prn "General exception:" e))
                      ))]
-      (if (some nil? res)
+      (if (or (some nil? res) (not (list? res)))
         '()
         res))
     '()))
@@ -122,14 +124,17 @@
        (catch Error e
          (prn "General error:" e))))
 
-(defn analyze-from-clojar-map [m]
-  (prn "Analyzing " (:artifact-id m))
-  (let [nss (require-from-clojar-map m)
-        res (->> (map analyze-ns-error-prone nss)
-                 (filter #(not (nil? %))))]
-    (remove-nss nss)
-    (prn "Analyzed " (:artifact-id m))
-    res))
+(defn analyze-from-clojar-map
+  ([m] (analyze-from-clojar-map -1 m))
+  ([index m]
+   (prn "Analyzing " (:artifact-id m) index)
+   ;; #dbg ^{:break/when (= (:artifact-id m) "edos")}
+   (let [nss (require-from-clojar-map m)
+         res (->> (map analyze-ns-error-prone nss)
+                  (filter #(not (nil? %))))]
+     (remove-nss nss)
+     (prn "Analyzed " (:artifact-id m))
+     res)))
 
 (defn analyze-clojar-by-name [name]
   (->> (get-clojar-by-name name)
@@ -140,8 +145,9 @@
   ([] (analyze-clojar-non-forks -1))
   ([limit]
    (as-> (get-clojars-non-forks) v
+     ;; (drop 799 v)
      (take (if (= -1 limit) (count v) limit) v)
-     (map analyze-from-clojar-map v)
+     (map-indexed analyze-from-clojar-map v)
      (map #(apply concat %) v)
      (apply concat v))))
 
@@ -150,7 +156,10 @@
   (set! *print-level* 10)
   (->>
    (take 2 (get-clojars-non-forks))
-   (map analyze-from-clojar-map)))
+   (map analyze-from-clojar-map))
+  (require '[edos.core])
+  (analyze-ns-error-prone 'edos.core)
+  )
 
 ;; currently not used
 (comment
@@ -189,6 +198,10 @@
   (->> (take 100 (get-clojars-non-forks))
        (map :group-id)
        (map-indexed println))
+  (->> (get-clojars-non-forks)
+       (map :group-id)
+       (map-indexed #(vector %1 %2))
+       (drop-while #(not= (second %) "edos")))
 
   )
 
