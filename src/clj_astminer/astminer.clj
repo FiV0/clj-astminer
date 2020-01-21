@@ -433,8 +433,8 @@
         asts-to-code2vec)))
 
 (defn clojars-mappings-to-code2vec
-  [clojar-maps limit]
-  (->> (take limit clojar-maps)
+  [asts limit]
+  (->> (take limit asts)
        to-asts
        asts-to-code2vec))
 

@@ -86,7 +86,7 @@
      (dorun (map println forms))
      (save-forms file forms print-dup?))))
 
-(def max-number-artifacts 100)
+(def max-number-forms 1000)
 
 (defn write-or-print-code2vec
   ([#^java.io.File file forms print-dup?] 
@@ -96,12 +96,13 @@
 
 (defn write-or-print-code2vec-chunked
   [#^java.io.File file limit print-dup?]
-  (loop [lim limit mappings (analyze-clojar-non-forks limit)]
+  (loop [forms (analyze-clojar-non-forks limit)]
+    ;; (println (count forms))
     (write-or-print-code2vec file
-                             (clojars-mappings-to-code2vec mappings (min lim max-number-artifacts))
+                             (clojars-mappings-to-code2vec forms max-number-forms)
                              print-dup?)
-    (when (> lim max-number-artifacts)
-      (recur (- lim max-number-artifacts) (drop max-number-artifacts mappings)))))
+    (when (seq forms) 
+      (recur (drop max-number-forms forms)))))
 
 (defn -main
   "Main entry point for clj-astminer. Currently "
@@ -156,7 +157,7 @@
   (-main "-o" "resources/output.txt" "-t" "AST-PATH-HASHED")
   (-main "-t" "AST-PATH-HASHED")
   (-main "-a" "-o" "resources/output.txt" "-t" "AST-PATH-HASHED")
-  (-main "-a" "-l" "101" "-o" "resources/clojars_output2.txt" "-t" "AST-PATH-HASHED")
+  (-main "-a" "-l" "10" "-o" "resources/clojars_output2.txt" "-t" "AST-PATH-HASHED")
   (-main "-t" "AST" "-f" "resources/reader-conditional-")
 
   (dorun (clojar-name-to-code2vec "rojat-arrows"))

@@ -106,7 +106,7 @@
                      (catch Exception e
                        (prn "General exception:" e))
                      ))]
-      (if (or (some nil? res) (not (list? res)))
+      (if (some nil? res) 
         '()
         res))
     '()))
