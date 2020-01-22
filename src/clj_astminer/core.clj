@@ -97,7 +97,6 @@
 (defn write-or-print-code2vec-chunked
   [#^java.io.File file limit print-dup?]
   (loop [forms (analyze-clojar-non-forks limit)]
-    ;; (println (count forms))
     (write-or-print-code2vec file
                              (clojars-mappings-to-code2vec forms max-number-forms)
                              print-dup?)
@@ -124,7 +123,7 @@
                [true _ _ "AST"] (write-or-print output-file (all-clojars-to-asts) true) 
                [true _ _ "AST-PATH"] (write-or-print output-file (all-clojars-to-ast-paths) true)
                [true _ _ "AST-PATH-HASHED"]
-               (write-or-print-code2vec-chunked output-file limit false)
+               (write-or-print-code2vec output-file (all-clojars-to-code2vec limit) false)
                [_ nil false _] (println "File " file " does not exist!")
                [_ nil true "AST"] (write-or-print output-file (file-to-asts file) true) 
                [_ nil true "AST-PATH"] (write-or-print output-file (file-to-ast-paths file) true) 
@@ -157,7 +156,7 @@
   (-main "-o" "resources/output.txt" "-t" "AST-PATH-HASHED")
   (-main "-t" "AST-PATH-HASHED")
   (-main "-a" "-o" "resources/output.txt" "-t" "AST-PATH-HASHED")
-  (-main "-a" "-l" "10" "-o" "resources/clojars_output2.txt" "-t" "AST-PATH-HASHED")
+  (-main "-a" "-l" "500" "-o" "resources/clojars_output3.txt" "-t" "AST-PATH-HASHED")
   (-main "-t" "AST" "-f" "resources/reader-conditional-")
 
   (dorun (clojar-name-to-code2vec "rojat-arrows"))

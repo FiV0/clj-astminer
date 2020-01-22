@@ -147,6 +147,7 @@
    (as-> (get-clojars-non-forks) v
      ;; (drop 799 v)
      (take (if (= -1 limit) (count v) limit) v)
+     ;; (reverse v)
      (map-indexed analyze-from-clojar-map v)
      (map #(apply concat %) v)
      (apply concat v))))
@@ -158,8 +159,7 @@
    (take 2 (get-clojars-non-forks))
    (map analyze-from-clojar-map))
   (require '[edos.core])
-  (analyze-ns-error-prone 'edos.core)
-  )
+  (analyze-ns-error-prone 'edos.core))
 
 ;; currently not used
 (comment
