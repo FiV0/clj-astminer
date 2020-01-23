@@ -224,4 +224,35 @@
    (for [jar (clojure.java.classpath/classpath-jarfiles)]
      (.getName ^java.util.jar.JarFile jar))
    (filter #(clojure.string/includes? % "duct")))
-  (require '[duct.logger.honeybadger]))
+  (require '[duct.logger.honeybadger])
+
+  (def res (get-clojars-non-forks))
+
+  (-> (nth res 138) :version)
+  (-> (nth res 2827) :version)
+
+  (->>
+   (map-indexed (fn [x y] [x y]) res)
+   (filter #(= (-> % second :artifact-id) "orchestra"))
+   ;; first
+   ;; second
+   ;; create-jar-path-from-clojar-map
+   ;; namespaces-in-jar
+   )
+
+  (add-lib 'speculative {:mvn/version "0.0.3"})
+  (add-lib 'speculative {:mvn/version "0.2.1-SNAPSHOT"})
+  (require 'speculative.instrument)
+  (ana/analyze-ns 'speculative.instrument)
+  (remove-ns 'speculative.instrument)
+
+  (add-lib 'orchestra {:mvn/version "2019.02.17-SNAPSHOT"})
+  (require 'orchestra.core)
+  (ana/analyze-ns 'orchestra.core)
+  (remove-ns 'orchestra.core)
+
+  (for [ns (all-ns)] (println ns))
+  
+  (require 'speculative.test)
+  (require 'speculative.optional)
+  (require 'speculative.instrument))

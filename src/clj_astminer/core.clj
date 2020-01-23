@@ -8,6 +8,7 @@
             [clj-astminer.retrieve :refer [analyze-clojar-non-forks]]
             [clojure.core.match :refer [match]]
             [clojure.tools.cli :refer [parse-opts]]
+            [clojure.tools.deps.alpha.repl :refer [add-lib]]
             [clojure.java.io :as io])
   (:gen-class))
 
@@ -109,34 +110,46 @@
   (try
     (let [cl (.getContextClassLoader (Thread/currentThread))]
       (.setContextClassLoader (Thread/currentThread) (clojure.lang.DynamicClassLoader. cl))
-      (let [args (parse-opts args cli-options)
-            options (:options args) 
-            file (:file options)
-            project-name (:project options)
-            output-file (io/file (:output options))
-            type (:type options)
-            all (:all options)
-            limit (:limit options)]
-        ;; TODO add error checking
-        ;; (println [all project-name (.exists (io/file file)) type])
-        (match [all project-name (.exists (io/file file)) type]
-               [true _ _ "AST"] (write-or-print output-file (all-clojars-to-asts) true) 
-               [true _ _ "AST-PATH"] (write-or-print output-file (all-clojars-to-ast-paths) true)
-               [true _ _ "AST-PATH-HASHED"]
-               (write-or-print-code2vec output-file (all-clojars-to-code2vec limit) false)
-               [_ nil false _] (println "File " file " does not exist!")
-               [_ nil true "AST"] (write-or-print output-file (file-to-asts file) true) 
-               [_ nil true "AST-PATH"] (write-or-print output-file (file-to-ast-paths file) true) 
-               [_ nil true "AST-PATH-HASHED"]
-               (write-or-print-code2vec output-file (file-to-code2vec file) false) 
-               [_ project-name _ "AST"]
-               (write-or-print output-file (clojar-name-to-asts project-name) true)
-               [_ project-name _ "AST-PATH"]
-               (write-or-print output-file (clojar-name-to-ast-paths project-name) true)
-               [_ project-name _ "AST-PATH-HASHED"]
-               ;; (clojar-name-to-code2vec project-name false true)
-               (write-or-print-code2vec output-file (clojar-name-to-code2vec project-name) false)
-               :else (throw (Exception. "Should not ")))))
+      ;; (write-or-print-code2vec "resources/speculative_output.txt"
+      ;;                          (clojar-name-to-code2vec "speculative") false)
+      (add-lib 'speculative {:mvn/version "0.0.3"})
+      ;; (add-lib 'speculative {:mvn/version "0.2.1-SNAPSHOT"})
+      (require 'speculative.instrument)
+      (remove-ns 'speculative.instrument)
+      (write-or-print-code2vec "resources/edos_output.txt"
+                               (clojar-name-to-code2vec "edos") false))
+    (comment
+      (let [cl (.getContextClassLoader (Thread/currentThread))]
+        (.setContextClassLoader (Thread/currentThread) (clojure.lang.DynamicClassLoader. cl))
+        (let [args (parse-opts args cli-options)
+              options (:options args) 
+              file (:file options)
+              project-name (:project options)
+              output-file (io/file (:output options))
+              type (:type options)
+              all (:all options)
+              limit (:limit options)]
+          ;; TODO add error checking
+          ;; (println [all project-name (.exists (io/file file)) type])
+          (match [all project-name (.exists (io/file file)) type]
+                 [true _ _ "AST"] (write-or-print output-file (all-clojars-to-asts) true) 
+                 [true _ _ "AST-PATH"] (write-or-print output-file (all-clojars-to-ast-paths) true)
+                 [true _ _ "AST-PATH-HASHED"]
+                 (write-or-print-code2vec output-file (all-clojars-to-code2vec limit) false)
+                 [_ nil false _] (println "File " file " does not exist!")
+                 [_ nil true "AST"] (write-or-print output-file (file-to-asts file) true) 
+                 [_ nil true "AST-PATH"] (write-or-print output-file (file-to-ast-paths file) true) 
+                 [_ nil true "AST-PATH-HASHED"]
+                 (write-or-print-code2vec output-file (file-to-code2vec file) false) 
+                 [_ project-name _ "AST"]
+                 (write-or-print output-file (clojar-name-to-asts project-name) true)
+                 [_ project-name _ "AST-PATH"]
+                 (write-or-print output-file (clojar-name-to-ast-paths project-name) true)
+                 [_ project-name _ "AST-PATH-HASHED"]
+                 ;; (clojar-name-to-code2vec project-name false true)
+                 (write-or-print-code2vec output-file (clojar-name-to-code2vec project-name) false)
+                 :else (throw (Exception. "Should not ")))))
+      )
     (catch Error e (println e))
     (catch Exception e (println e))))
 
@@ -148,7 +161,8 @@
   (-main "-p" "thalia" "-o" "resources/output.txt" "-t" "AST-PATH-HASHED")
   (-main "-p" "dadysql" "-o" "resources/output.txt" "-t" "AST-PATH-HASHED")
   (-main "-p" "edos" "-o" "resources/edos_output.txt" "-t" "AST-PATH-HASHED")
-  (-main "-p" "orchestra" "-o" "resources/_output.txt" "-t" "AST-PATH-HASHED")
+  (-main "-p" "speculative" "-o" "resources/speculative_output.txt" "-t" "AST-PATH-HASHED")
+  (-main "-p" "orchestra" "-o" "resources/orchestra_output.txt" "-t" "AST-PATH-HASHED")
   (-main "-p" "noir-cljs-lypanov" "-o" "resources/noir_cljs_lypanov_output.txt" "-t" "AST-PATH-HASHED")
 
   (-main "-p" "viz-cljc" "-o" "resources/output.txt" "-t" "AST-PATH-HASHED")
