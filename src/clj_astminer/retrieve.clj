@@ -23,18 +23,31 @@
 
 (defn get-clojars-pom-mappings []
   (as->
-   (client/get "https://clojars.org/repo/feed.clj.gz" {:as :byte-array}) v
-   (:body v)
-   (java.io.ByteArrayInputStream. v)  
-   (java.util.zip.GZIPInputStream. v)
-   (slurp v)
-   (clojure.string/split v #"\n")
-   (map clojure.edn/read-string v)
-   (map #(assoc % :version (first (:versions %))) v)))
+      (client/get "https://clojars.org/repo/feed.clj.gz" {:as :byte-array}) v
+    (:body v)
+    (java.io.ByteArrayInputStream. v)  
+    (java.util.zip.GZIPInputStream. v)
+    (slurp v)
+    (clojure.string/split v #"\n")
+    (map clojure.edn/read-string v)
+    (map #(assoc % :version (first (:versions %))) v)))
+
+;; to not remove the projects own dependencies and
+;; projects that I had issues with
+(def forbidden-projects
+  ["cheshire" "clj-http" "clj-jgit" "clojure" "core.match" "math.combinatorics"
+   "tools.gitlibs" "tools.analyzer.jvm" "tools.namespace" "tools.trace"
+   "tools.cli" "tentacles" "tools.deps.alpha" "speculative"])
+
+(defn in? 
+  "True if coll contains elm."
+  [coll elm]  
+  (some #(= elm %) coll))
 
 (defn get-clojars-non-forks []
   (->> (get-clojars-pom-mappings)
-       (filter (fn [m] (= (:artifact-id m) (:group-id m))))))
+       (filter (fn [m] (= (:artifact-id m) (:group-id m))))
+       (filter (fn [m] (not (in? forbidden-projects (:artifact-id m)))))))
 
 (defn get-clojar-by-name [name]
   (-> (client/get (str "https://clojars.org/api/artifacts/" name)
@@ -141,11 +154,11 @@
        analyze-from-clojar-map
        (apply concat)))
 
+
 (defn analyze-clojar-non-forks
   ([] (analyze-clojar-non-forks -1))
   ([limit]
    (as-> (get-clojars-non-forks) v
-     ;; (drop 799 v)
      (take (if (= -1 limit) (count v) limit) v)
      ;; (reverse v)
      (map-indexed analyze-from-clojar-map v)
@@ -226,33 +239,4 @@
    (filter #(clojure.string/includes? % "duct")))
   (require '[duct.logger.honeybadger])
 
-  (def res (get-clojars-non-forks))
-
-  (-> (nth res 138) :version)
-  (-> (nth res 2827) :version)
-
-  (->>
-   (map-indexed (fn [x y] [x y]) res)
-   (filter #(= (-> % second :artifact-id) "orchestra"))
-   ;; first
-   ;; second
-   ;; create-jar-path-from-clojar-map
-   ;; namespaces-in-jar
-   )
-
-  (add-lib 'speculative {:mvn/version "0.0.3"})
-  (add-lib 'speculative {:mvn/version "0.2.1-SNAPSHOT"})
-  (require 'speculative.instrument)
-  (ana/analyze-ns 'speculative.instrument)
-  (remove-ns 'speculative.instrument)
-
-  (add-lib 'orchestra {:mvn/version "2019.02.17-SNAPSHOT"})
-  (require 'orchestra.core)
-  (ana/analyze-ns 'orchestra.core)
-  (remove-ns 'orchestra.core)
-
-  (for [ns (all-ns)] (println ns))
-  
-  (require 'speculative.test)
-  (require 'speculative.optional)
-  (require 'speculative.instrument))
+  (def res (get-clojars-non-forks)))

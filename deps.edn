@@ -12,6 +12,8 @@
   org.clojure/tools.namespace {:mvn/version "0.3.1"}
   org.clojure/tools.trace {:mvn/version "0.7.10"}
   org.clojure/tools.cli {:mvn/version "0.4.2"}
+  ;; speculative {:mvn/version "0.0.4-SNAPSHOT"}
   com.github.clojure/tools.deps.alpha
   {:git/url "https://github.com/clojure/tools.deps.alpha.git"
-   :sha "19d197ab221d37db750423eb970880cb87a91100"}}}
+   :sha "19d197ab221d37db750423eb970880cb87a91100"}}
+ :aliases {:longst {:jvm-opts ["-XX:-OmitStackTraceInFastThrow"]}}}
