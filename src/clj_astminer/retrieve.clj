@@ -154,16 +154,17 @@
        analyze-from-clojar-map
        (apply concat)))
 
+(defn calculate-limit [limit mappings]
+  (take (if (= -1 limit) (count mappings) limit) mappings))
 
 (defn analyze-clojar-non-forks
   ([] (analyze-clojar-non-forks -1))
   ([limit]
-   (as-> (get-clojars-non-forks) v
-     (take (if (= -1 limit) (count v) limit) v)
-     ;; (reverse v)
-     (map-indexed analyze-from-clojar-map v)
-     (map #(apply concat %) v)
-     (apply concat v))))
+   (->> (get-clojars-non-forks)
+        (calculate-limit limit)
+        (map-indexed analyze-from-clojar-map)
+        (map #(apply concat %))
+        (apply concat))))
 
 (comment
   (set! *print-length* 10)
