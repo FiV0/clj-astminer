@@ -94,10 +94,13 @@
 (defn namespaces-in-jar
   "Enumerates the namespaces in th"
   [jar-file-path]
-  (-> jar-file-path
-      expand-home
-      java.util.jar.JarFile.
-      (ns-find/find-namespaces-in-jarfile ns-find/clj)))
+  (try (-> jar-file-path
+           expand-home
+           java.util.jar.JarFile.
+           (ns-find/find-namespaces-in-jarfile ns-find/clj))
+       (catch java.util.zip.ZipException e
+         (do (println "Zip exception:" e)
+             '()))))
 
 (defn require-from-clojar-map
   "Adds dependency from clojar mapping."
@@ -111,13 +114,13 @@
                        (require `~ns)
                        ns)
                      (catch clojure.lang.Compiler$CompilerException e
-                       (prn "Compiler exception: " e))
+                       (println "Compiler exception: " e))
                      (catch java.io.FileNotFoundException e
-                       (prn "FileNotFound Error: " e))
+                       (println "FileNotFound Error: " e))
                      (catch Error e
-                       (prn "General error:" e))
+                       (println "General error:" e))
                      (catch Exception e
-                       (prn "General exception:" e))
+                       (println "General exception:" e))
                      ))]
       (if (some nil? res) 
         '()
@@ -133,20 +136,20 @@
   "Analyzes a namespace and returns nil in case of an error."
   (try (ana/analyze-ns ns)
        (catch Exception e
-         (prn "General exception:" (ex-data e)))
+         (println "General exception:" (ex-data e)))
        (catch Error e
-         (prn "General error:" e))))
+         (println "General error:" e))))
 
 (defn analyze-from-clojar-map
   ([m] (analyze-from-clojar-map -1 m))
   ([index m]
-   (prn "Analyzing " (:artifact-id m) index)
+   (println "Analyzing " (:artifact-id m) index)
    ;; #dbg ^{:break/when (= (:artifact-id m) "edos")}
    (let [nss (require-from-clojar-map m)
          res (->> (map analyze-ns-error-prone nss)
                   (filter #(not (nil? %))))]
      (remove-nss nss)
-     (prn "Analyzed " (:artifact-id m))
+     (println "Analyzed " (:artifact-id m))
      res)))
 
 (defn analyze-clojar-by-name [name]
